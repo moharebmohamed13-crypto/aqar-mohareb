@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>عقار محارب | شاليهات للبيع والإيجار</title>
+<meta name="description" content="عقار محارب — شاليهات للبيع والإيجار في قرى سياحية مختارة. اختار القرية وشوف الشاليهات المتاحة بكل تقسيماتها.">
+<link rel="icon" href="logo-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Poppins:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="hero" aria-labelledby="hero-title">
+    <img class="hero-bg" id="hero-bg" alt="">
+    <div class="container">
+      <div class="hero-text">
+        <div class="eyebrow" id="hero-eyebrow">شاليهات للبيع والإيجار</div>
+        <h1 id="hero-title">شاليهك على البحر، باختيار أسهل</h1>
+        <p id="hero-sub">قرى مختارة بعناية، وشاليهات بتقسيمات تناسب كل عيلة. اختار القرية، وشوف المتاح فيها للبيع أو للإيجار.</p>
+        <div class="hero-actions">
+          <a class="btn btn-gold" href="#villages">استعرض القرى <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+          <a class="btn btn-outline-light" id="hero-wa" href="#contact" target="_blank" rel="noopener">كلمنا على واتساب</a>
+        </div>
+      </div>
+      <div class="hero-logo" aria-hidden="true">
+        <img src="logo-icon.png" alt="">
+        <span class="w1">AQAR MOHAREB</span>
+        <span class="w2">real estate</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="search-wrap container">
+    <form class="search" id="search" role="search" aria-label="ابحث عن شاليه">
+      <div class="field field-seg">
+        <span id="offer-label">نوع العرض</span>
+        <div class="seg" role="group" aria-labelledby="offer-label">
+          <button type="button" data-offer="" aria-pressed="true">الكل</button>
+          <button type="button" data-offer="sale" aria-pressed="false">للبيع</button>
+          <button type="button" data-offer="rent" aria-pressed="false">للإيجار</button>
+        </div>
+      </div>
+      <label class="field">القرية
+        <select name="village"><option value="">كل القرى</option></select>
+      </label>
+      <label class="field">عدد الغرف
+        <select name="rooms"><option value="">أي عدد</option><option value="1">غرفة</option><option value="2">غرفتين</option><option value="3">٣ غرف</option><option value="4">٤ غرف أو أكتر</option></select>
+      </label>
+      <label class="field">الفيو
+        <select name="view"><option value="">أي فيو</option><option>بحر</option><option>لاجون</option><option>حمام سباحة</option><option>جاردن</option></select>
+      </label>
+      <button class="btn btn-gold" type="submit" style="min-height:52px">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        ابحث
+      </button>
+    </form>
+  </div>
+
+  <section class="section" id="results" hidden>
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="kicker">نتائج البحث</span>
+          <h2 id="results-title">الشاليهات المتاحة</h2>
+        </div>
+        <button class="btn btn-outline" type="button" id="clear-search">مسح البحث</button>
+      </div>
+      <div class="grid-3" id="results-grid"></div>
+    </div>
+  </section>
+
+  <section class="section" id="villages">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="kicker">القرى السياحية</span>
+          <h2>اختار القرية الأول</h2>
+          <p>كل قرية ليها مميزاتها. ادخل على القرية وشوف الشاليهات المتاحة فيها بكل تقسيماتها.</p>
+        </div>
+      </div>
+      <div class="grid-3" id="villages-grid">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section steps">
+    <div class="container">
+      <div class="section-head" style="justify-content:center;text-align:center">
+        <div><span class="kicker">خطوات بسيطة</span><h2>إزاي تلاقي شاليهك</h2></div>
+      </div>
+      <div class="grid-3">
+        <div class="step"><span class="step-num">١</span><h3>اختار القرية</h3><p>شوف مميزات كل قرية وقارن بينها: الشاطئ، اللاجون، حمامات السباحة والخدمات.</p></div>
+        <div class="step"><span class="step-num">٢</span><h3>اختار الشاليه</h3><p>فلتر بعدد الغرف والدور والفيو، واعرف السعر للبيع أو للإيجار.</p></div>
+        <div class="step"><span class="step-num">٣</span><h3>كلمنا على واتساب</h3><p>ابعتلنا الشاليه اللي عجبك، ونأكد معاك التوفر وكل التفاصيل.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="container">
+      <div>
+        <h2>مش لاقي اللي بتدور عليه؟</h2>
+        <p>قولنا عدد الأفراد والميزانية والقرية اللي تفضلها، ونرشحلك الأنسب.</p>
+      </div>
+      <div class="cta-actions" id="cta-actions"></div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+<script type="module" src="home.js"></script>
+</body>
+</html>
