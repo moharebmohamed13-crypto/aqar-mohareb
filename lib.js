@@ -157,22 +157,6 @@ export async function mountChrome(active) {
     document.body.appendChild(a);
   }
 
-  // شريط سفلي للموبايل (زي التطبيقات)
-  if (!document.querySelector('.bottom-nav')) {
-    const b = document.createElement('nav');
-    b.className = 'bottom-nav';
-    b.setAttribute('aria-label', 'تنقل سريع');
-    const items = [
-      ['home', `${ROOT}index.html`, 'home', 'الرئيسية'],
-      ['villages', `${ROOT}index.html#villages`, 'lagoon', 'القرى'],
-      ['chalets', `${ROOT}index.html#results`, 'roof', 'الشاليهات'],
-    ];
-    b.innerHTML = items.map(([k, h, ic, t]) => `<a href="${h}" class="${k === active ? 'active' : ''}">${icon(ic)}<span>${t}</span></a>`).join('')
-      + (s.phone ? `<a href="tel:${esc(s.phone)}">${icon('phone')}<span>اتصل</span></a>` : '')
-      + `<a href="${waLink(s)}" target="_blank" rel="noopener" class="wa">${icon('whatsapp')}<span>واتساب</span></a>`;
-    document.body.appendChild(b);
-    document.body.classList.add('has-bottom-nav');
-  }
   return s;
 }
 
