@@ -1,4 +1,4 @@
-import { sb, img, esc, money, icon, qs, mountChrome, waLink, chaletCard, showError, lightbox } from './lib.js';
+import { sb, img, esc, money, icon, qs, mountChrome, waLink, chaletCard, showError, lightbox, carousel } from './lib.js';
 
 const settings = await mountChrome('villages');
 const page = document.getElementById('page');
@@ -33,7 +33,7 @@ function render(v, chalets) {
   page.innerHTML = `
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="index.html">الرئيسية</a><span>/</span><a href="index.html#villages">القرى</a><span>/</span><strong>${esc(v.name)}</strong></nav>
     <div class="gallery">
-      ${pics.slice(0, 5).map((p, i) => `<img src="${esc(img(p))}" alt="${esc(v.name)} – صورة ${i + 1}" data-full="${esc(img(p))}">`).join('') || '<div class="ph"></div>'}
+      ${pics.map((p, i) => `<img src="${esc(img(p))}" alt="${esc(v.name)} – صورة ${i + 1}" data-full="${esc(img(p))}">`).join('') || '<div class="ph"></div>'}
     </div>
     <div class="two-col" style="margin-top:40px">
       <div class="main">
@@ -74,6 +74,7 @@ function render(v, chalets) {
 
   const open = lightbox();
   page.querySelectorAll('.gallery img').forEach((im) => im.addEventListener('click', () => open(im.dataset.full)));
+  carousel(page.querySelector('.gallery'));
 
   const CHIPS = [
     ['all', 'الكل', () => true],
@@ -98,6 +99,8 @@ function render(v, chalets) {
     const f = (CHIPS.find(([k]) => k === chip) || CHIPS[0])[2];
     const list = pool.filter(f);
     grid.innerHTML = list.length ? list.map((c) => chaletCard(c)).join('') : `<div class="empty">مفيش شاليهات ${tab === 'rent' ? 'للإيجار' : 'للبيع'} بالمواصفات دي دلوقتي. <a href="${waLink(settings, `أهلًا، بدور على شاليه في ${v.name}`)}" target="_blank" rel="noopener">كلمنا ونرشحلك</a></div>`;
+    carousel(grid);
+    grid.scrollTo({ left: 0 });
   }
   page.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; chip = 'all'; draw(); }));
   chipsEl.addEventListener('click', (e) => { const b = e.target.closest('[data-chip]'); if (b) { chip = b.dataset.chip; draw(); } });

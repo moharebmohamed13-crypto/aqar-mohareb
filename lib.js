@@ -59,6 +59,10 @@ const P = {
   washer: '<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="13" r="4.5"/><path d="M8 6.5h.01M11 6.5h.01"/>',
   parking: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M10 16V8h3a2.5 2.5 0 0 1 0 5h-3"/>',
   star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  home: '<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
+  tag: '<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/>',
 };
 export const icon = (name, cls = 'icon') =>
@@ -152,7 +156,53 @@ export async function mountChrome(active) {
     a.innerHTML = icon('whatsapp');
     document.body.appendChild(a);
   }
+
+  // شريط سفلي للموبايل (زي التطبيقات)
+  if (!document.querySelector('.bottom-nav')) {
+    const b = document.createElement('nav');
+    b.className = 'bottom-nav';
+    b.setAttribute('aria-label', 'تنقل سريع');
+    const items = [
+      ['home', `${ROOT}index.html`, 'home', 'الرئيسية'],
+      ['villages', `${ROOT}index.html#villages`, 'lagoon', 'القرى'],
+      ['chalets', `${ROOT}index.html#results`, 'roof', 'الشاليهات'],
+    ];
+    b.innerHTML = items.map(([k, h, ic, t]) => `<a href="${h}" class="${k === active ? 'active' : ''}">${icon(ic)}<span>${t}</span></a>`).join('')
+      + (s.phone ? `<a href="tel:${esc(s.phone)}">${icon('phone')}<span>اتصل</span></a>` : '')
+      + `<a href="${waLink(s)}" target="_blank" rel="noopener" class="wa">${icon('whatsapp')}<span>واتساب</span></a>`;
+    document.body.appendChild(b);
+    document.body.classList.add('has-bottom-nav');
+  }
   return s;
+}
+
+// ---------- عرض بالسحب يمين وشمال (موبايل وتابلت) ----------
+export function carousel(el) {
+  if (!el) return;
+  el.classList.add('carousel');
+  let dots = el.nextElementSibling;
+  if (!dots || !dots.classList.contains('dots')) {
+    dots = document.createElement('div');
+    dots.className = 'dots';
+    el.after(dots);
+  }
+  const items = [...el.children].filter((c) => !c.classList.contains('empty') && !c.classList.contains('skeleton'));
+  if (items.length < 2) { dots.innerHTML = ''; return; }
+  dots.innerHTML = items.map((_, i) => `<button type="button" aria-label="عنصر ${i + 1}" ${i === 0 ? 'aria-current="true"' : ''}></button>`).join('')
+    + `<span class="dots-count">${num(1)} / ${num(items.length)}</span>`;
+  const btns = [...dots.querySelectorAll('button')];
+  const count = dots.querySelector('.dots-count');
+  btns.forEach((b, i) => b.addEventListener('click', () => items[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })));
+  if (el._io) el._io.disconnect();
+  el._io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      const i = items.indexOf(e.target);
+      btns.forEach((b, j) => b.toggleAttribute('aria-current', j === i));
+      count.textContent = `${num(i + 1)} / ${num(items.length)}`;
+    });
+  }, { root: el, threshold: 0.6 });
+  items.forEach((it) => el._io.observe(it));
 }
 
 // ---------- كارت الشاليه ----------

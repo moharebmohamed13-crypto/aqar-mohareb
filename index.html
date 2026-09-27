@@ -35,7 +35,33 @@
     </div>
   </section>
 
-  <div class="search-wrap container">
+  <section class="section" id="villages">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="kicker">القرى السياحية</span>
+          <h2>اختار القرية الأول</h2>
+          <p>كل قرية ليها مميزاتها. ادخل على القرية وشوف الشاليهات المتاحة فيها بكل تقسيماتها.</p>
+        </div>
+      </div>
+      <div class="grid-3" id="villages-grid">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section find" id="find" aria-labelledby="find-title">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="kicker">دوّر على شاليه</span>
+          <h2 id="find-title">بتدور على إيه؟</h2>
+          <p>اختار من الأيقونات أو استخدم البحث المفصّل.</p>
+        </div>
+      </div>
+      <div class="quick-grid" id="quick"></div>
+      <details class="search-more">
+        <summary>بحث مفصّل</summary>
     <form class="search" id="search" role="search" aria-label="ابحث عن شاليه">
       <div class="field field-seg">
         <span id="offer-label">نوع العرض</span>
@@ -59,7 +85,9 @@
         ابحث
       </button>
     </form>
-  </div>
+      </details>
+    </div>
+  </section>
 
   <section class="section" id="results" hidden>
     <div class="container">
@@ -74,27 +102,12 @@
     </div>
   </section>
 
-  <section class="section" id="villages">
-    <div class="container">
-      <div class="section-head">
-        <div>
-          <span class="kicker">القرى السياحية</span>
-          <h2>اختار القرية الأول</h2>
-          <p>كل قرية ليها مميزاتها. ادخل على القرية وشوف الشاليهات المتاحة فيها بكل تقسيماتها.</p>
-        </div>
-      </div>
-      <div class="grid-3" id="villages-grid">
-        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
-      </div>
-    </div>
-  </section>
-
   <section class="section steps">
     <div class="container">
       <div class="section-head" style="justify-content:center;text-align:center">
         <div><span class="kicker">خطوات بسيطة</span><h2>إزاي تلاقي شاليهك</h2></div>
       </div>
-      <div class="grid-3">
+      <div class="grid-3" id="steps-grid">
         <div class="step"><span class="step-num">١</span><h3>اختار القرية</h3><p>شوف مميزات كل قرية وقارن بينها: الشاطئ، اللاجون، حمامات السباحة والخدمات.</p></div>
         <div class="step"><span class="step-num">٢</span><h3>اختار الشاليه</h3><p>فلتر بعدد الغرف والدور والفيو، واعرف السعر للبيع أو للإيجار.</p></div>
         <div class="step"><span class="step-num">٣</span><h3>كلمنا على واتساب</h3><p>ابعتلنا الشاليه اللي عجبك، ونأكد معاك التوفر وكل التفاصيل.</p></div>

@@ -1,4 +1,4 @@
-import { sb, img, esc, money, icon, mountChrome, waLink, chaletCard, showError } from './lib.js';
+import { sb, img, esc, money, icon, mountChrome, waLink, chaletCard, showError, carousel } from './lib.js';
 
 const settings = await mountChrome('home');
 
@@ -56,6 +56,7 @@ function renderVillages() {
       </div>
     </a>`;
   }).join('');
+  carousel(grid);
   villageSelect.innerHTML = '<option value="">كل القرى</option>' + villages.map((v) => `<option value="${v.id}">${esc(v.name)}</option>`).join('');
 }
 
@@ -69,24 +70,28 @@ form.querySelectorAll('[data-offer]').forEach((b) => b.addEventListener('click',
 
 const results = document.getElementById('results');
 const rgrid = document.getElementById('results-grid');
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fd = new FormData(form);
+async function runSearch(p, title) {
   results.hidden = false;
   rgrid.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
   results.scrollIntoView({ behavior: 'smooth' });
   let q = sb.from('chalets').select('*, villages(name)').order('status').order('created_at', { ascending: false });
-  if (offer) q = q.eq('offer_type', offer);
-  if (fd.get('village')) q = q.eq('village_id', fd.get('village'));
-  const rooms = fd.get('rooms');
-  if (rooms === '4') q = q.gte('rooms', 4); else if (rooms) q = q.eq('rooms', Number(rooms));
-  if (fd.get('view')) q = q.eq('view', fd.get('view'));
+  if (p.offer) q = q.eq('offer_type', p.offer);
+  if (p.village) q = q.eq('village_id', p.village);
+  if (p.rooms === '4') q = q.gte('rooms', 4); else if (p.rooms) q = q.eq('rooms', Number(p.rooms));
+  if (p.view) q = q.eq('view', p.view);
+  if (p.floor) q = q.ilike('floor', `%${p.floor}%`);
   const { data, error } = await q;
   if (error) return showError(rgrid, error);
-  document.getElementById('results-title').textContent = data.length ? `لقينا ${data.length} شاليه` : 'مفيش شاليهات مطابقة';
+  document.getElementById('results-title').textContent = data.length ? `${title || 'لقينا'} · ${data.length} شاليه` : 'مفيش شاليهات مطابقة';
   rgrid.innerHTML = data.length
     ? data.map((c) => chaletCard(c, c.villages?.name)).join('')
     : '<div class="empty">جرّب تغيّر الفلاتر، أو كلمنا على واتساب ونرشحلك.</div>';
+  carousel(rgrid);
+}
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const fd = new FormData(form);
+  runSearch({ offer, village: fd.get('village'), rooms: fd.get('rooms'), view: fd.get('view') }, 'نتائج البحث');
 });
 document.getElementById('clear-search').addEventListener('click', () => {
   form.reset(); offer = '';
@@ -94,4 +99,24 @@ document.getElementById('clear-search').addEventListener('click', () => {
   results.hidden = true;
   document.getElementById('villages').scrollIntoView({ behavior: 'smooth' });
 });
-if (location.hash === '#results') form.requestSubmit();
+
+// ---------- تصفح سريع بالأيقونات ----------
+const QUICK = [
+  ['key', 'للإيجار', { offer: 'rent' }],
+  ['tag', 'للبيع', { offer: 'sale' }],
+  ['beach', 'فيو بحر', { view: 'بحر' }],
+  ['lagoon', 'فيو لاجون', { view: 'لاجون' }],
+  ['garden', 'أرضي بجاردن', { floor: 'جاردن' }],
+  ['roof', 'روف', { floor: 'روف' }],
+];
+const quick = document.getElementById('quick');
+quick.innerHTML = QUICK.map(([ic, t], i) => `<button type="button" class="quick-item" data-q="${i}"><span class="quick-icon">${icon(ic)}</span><span>${t}</span></button>`).join('');
+quick.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-q]');
+  if (!b) return;
+  const [, t, p] = QUICK[Number(b.dataset.q)];
+  runSearch(p, t);
+});
+if (location.hash === '#results') runSearch({}, 'كل الشاليهات');
+window.addEventListener('hashchange', () => { if (location.hash === '#results') runSearch({}, 'كل الشاليهات'); });
+carousel(document.getElementById('steps-grid'));

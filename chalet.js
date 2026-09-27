@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, qs, mountChrome, waLink, waMessage, showError, STATUS, OFFER } from './lib.js';
+import { sb, img, esc, num, money, icon, qs, mountChrome, waLink, waMessage, showError, STATUS, OFFER, carousel } from './lib.js';
 
 const settings = await mountChrome('chalets');
 const page = document.getElementById('page');
@@ -69,7 +69,10 @@ function render(c) {
     <nav class="crumbs" aria-label="مسار الصفحة"><a href="index.html">الرئيسية</a><span>/</span><a href="village.html?v=${encodeURIComponent(v.slug || v.id)}">${esc(v.name)}</a><span>/</span><strong>شاليه ${esc(c.code)}</strong></nav>
     <div class="two-col" style="margin-top:20px">
       <div class="main">
-        <div>
+        <div class="m-gallery-wrap">
+          <div class="m-gallery">${pics.map((p, i) => `<img src="${esc(img(p))}" alt="${esc(c.title)} – صورة ${i + 1}" ${i ? 'loading="lazy"' : ''}>`).join('')}</div>
+        </div>
+        <div class="d-gallery">
           <div class="chalet-main-img">
             ${pics[0] ? `<img id="main-img" src="${esc(img(pics[0]))}" alt="${esc(c.title)}">` : ''}
             ${pics.length > 1 ? `<span class="count" id="img-count">١ / ${num(pics.length)}</span>` : ''}
@@ -92,11 +95,20 @@ function render(c) {
           <span class="more">مميزات القرية ${icon('arrow')}</span>
         </a>
       </div>
-      <aside><div class="book-card">${bookCard}
+      <aside id="book-aside"><div class="book-card">${bookCard}
         <hr style="border:0;border-top:1px solid #ECE7DC;margin:0">
         ${settings.phone ? `<a href="tel:${esc(settings.phone)}" style="display:flex;justify-content:center;gap:8px;font-weight:600">${icon('phone')} أو اتصل: <span dir="ltr">${esc(settings.phone)}</span></a>` : ''}
       </div></aside>
     </div>`;
+
+  // شريط الحجز السفلي (موبايل)
+  const bar = document.createElement('div');
+  bar.className = 'book-bar';
+  bar.innerHTML = `<div><b>${isRent ? money(c.price_night) : money(c.price_total)}</b>${isRent ? '<small> / الليلة</small>' : ''}<small class="st ${st.cls}">${st.label}</small></div>
+    <a class="btn btn-gold" href="#book-aside">${icon('whatsapp')} ${isRent ? 'احجز الآن' : 'استفسر'}</a>`;
+  document.body.appendChild(bar);
+  document.body.classList.add('has-book-bar');
+  carousel(page.querySelector('.m-gallery'));
 
   // معرض الصور
   const main = page.querySelector('#main-img');
