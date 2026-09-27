@@ -1,4 +1,4 @@
-import { sb, img, esc, money, icon, mountChrome, waLink, chaletCard, showError, carousel } from './lib.js';
+import { sb, img, esc, num, money, icon, mountChrome, waLink, chaletCard, showError, carousel } from './lib.js';
 
 const settings = await mountChrome('home');
 
@@ -19,7 +19,7 @@ let villages = [];
 try {
   const { data, error } = await sb
     .from('villages')
-    .select('id, name, slug, tagline, cover_image, sort_order, village_features(features(name, sort_order)), chalets(offer_type, price_night, price_total, status)')
+    .select('id, name, slug, cover_image, sort_order, chalets(offer_type)')
     .eq('is_visible', true)
     .order('sort_order')
     .order('created_at');
@@ -34,25 +34,13 @@ function renderVillages() {
     const cs = v.chalets || [];
     const hasSale = cs.some((c) => c.offer_type === 'sale');
     const hasRent = cs.some((c) => c.offer_type === 'rent');
-    const rentMin = Math.min(...cs.filter((c) => c.offer_type === 'rent' && c.price_night).map((c) => c.price_night));
-    const saleMin = Math.min(...cs.filter((c) => c.offer_type === 'sale' && c.price_total).map((c) => c.price_total));
-    const feats = (v.village_features || []).map((x) => x.features).filter(Boolean).sort((a, b) => a.sort_order - b.sort_order).slice(0, 3);
-    const priceLine = isFinite(rentMin)
-      ? `<div><div class="price-note">الإيجار يبدأ من</div><div class="price">${money(rentMin)} <small>/ الليلة</small></div></div>`
-      : isFinite(saleMin)
-        ? `<div><div class="price-note">البيع يبدأ من</div><div class="price">${money(saleMin)}</div></div>`
-        : `<div class="price-note">${cs.length ? '' : 'قريبًا'}</div>`;
     return `
-    <a class="card" href="village.html?v=${encodeURIComponent(v.slug || v.id)}">
-      <div class="card-media">
-        ${v.cover_image ? `<img src="${esc(img(v.cover_image))}" alt="${esc(v.name)}" loading="lazy">` : ''}
-        <div class="badges">${hasSale ? '<span class="badge badge-dark">للبيع</span>' : ''}${hasRent ? '<span class="badge badge-gold">للإيجار</span>' : ''}</div>
-      </div>
-      <div class="card-body">
-        <h3 class="card-title-lg">${esc(v.name)}</h3>
-        ${v.tagline ? `<div class="card-sub">${esc(v.tagline)}</div>` : ''}
-        <div class="chips">${feats.map((f) => `<span class="chip">${esc(f.name)}</span>`).join('')}</div>
-        <div class="card-foot">${priceLine}<span class="more">${cs.length ? `${cs.length} شاليه` : 'شوف القرية'} ${icon('arrow')}</span></div>
+    <a class="vcard" href="village.html?v=${encodeURIComponent(v.slug || v.id)}" aria-label="قرية ${esc(v.name)}">
+      ${v.cover_image ? `<img src="${esc(img(v.cover_image))}" alt="" loading="lazy">` : ''}
+      <div class="badges">${hasSale ? '<span class="badge badge-dark">للبيع</span>' : ''}${hasRent ? '<span class="badge badge-gold">للإيجار</span>' : ''}</div>
+      <div class="vcard-body">
+        <h3>${esc(v.name)}</h3>
+        <span class="vcard-cta">${cs.length ? `${num(cs.length)} شاليه متاح` : 'شوف القرية'} ${icon('arrow')}</span>
       </div>
     </a>`;
   }).join('');
