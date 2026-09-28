@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>الشاليه | عقار محارب</title>
+<title>احجز شاليه | عقار محارب</title>
 <meta name="theme-color" content="#1A1A1A">
 <link rel="icon" href="logo-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,8 +13,13 @@
 </head>
 <body>
 <header id="bar" class="bar"></header>
-<main id="page"><div class="wrap" style="padding-top:16px"><div class="skel" style="min-height:260px"></div></div></main>
-<footer id="contact"></footer>
-<script type="module" src="chalet.js"></script>
+<main class="wrap narrow" style="min-height:calc(100vh - 54px);display:flex;flex-direction:column">
+  <div class="steps" aria-hidden="true"><span></span><span></span><span></span></div>
+  <span class="step-note" id="note"></span>
+  <h1 class="page-h am-up" id="title"></h1>
+  <div id="body" style="flex:1"></div>
+  <div class="sticky-foot"><button class="btn btn-dark btn-block" type="button" id="next" disabled></button></div>
+</main>
+<script type="module" src="book.js"></script>
 </body>
 </html>

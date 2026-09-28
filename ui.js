@@ -1,0 +1,230 @@
+import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js';
+
+export const $ = (s, r = document) => r.querySelector(s);
+export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+export const params = () => Object.fromEntries(new URLSearchParams(location.search));
+export const logo = new URL('./logo-icon.png', import.meta.url).href;
+
+// ---------- التواريخ ----------
+export const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const parse = (s) => { if (!s) return null; const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+export const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+export const nightsBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
+const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+export const fmtDay = (s) => { const d = parse(s); return `${num(d.getDate())} ${MONTHS[d.getMonth()]}`; };
+export const fmtRange = (a, b) => `${fmtDay(a)} ← ${fmtDay(b)}`;
+
+export const UNITS = [
+  { rooms: 0, n: 'S', name: 'استوديو', guests: 'من ١ لـ ٢ أفراد' },
+  { rooms: 1, n: '١', name: 'غرفة', guests: 'من ٢ لـ ٤ أفراد' },
+  { rooms: 2, n: '٢', name: 'غرفتين', guests: 'من ٤ لـ ٦ أفراد' },
+  { rooms: 3, n: '٣', name: '٣ غرف', guests: 'من ٦ لـ ٨ أفراد' },
+  { rooms: 4, n: '٤', name: '٤ غرف أو أكتر', guests: 'من ٨ لـ ١٠ أفراد' },
+];
+export const unitName = (r) => (UNITS.find((u) => u.rooms === Number(r)) || {}).name || '';
+
+// ---------- الهيدر ----------
+export async function bar({ back, close, title } = {}) {
+  const s = await getSettings();
+  const el = $('#bar');
+  el.className = 'bar';
+  const left = close
+    ? `<a class="bar-btn" href="${close}" aria-label="إغلاق">${x()}</a>`
+    : `<a class="bar-btn" href="${waLink(s)}" target="_blank" rel="noopener" aria-label="واتساب">${icon('whatsapp')}</a>`;
+  el.innerHTML = `<div class="wrap">
+    ${back ? `<a class="bar-btn" href="${back}" aria-label="رجوع">${arrowBack()}</a>` : ''}
+    ${title && back ? `<span class="bar-title">${esc(title)}</span>` : `<a class="brand" href="index.html"><img src="${logo}" alt=""><span><b>عقار محارب</b><small>AQAR MOHAREB</small></span></a>`}
+    <nav class="bar-links" aria-label="القائمة"><a href="index.html">الرئيسية</a><a href="book.html">احجز شاليه</a><a href="#contact">تواصل معنا</a></nav>
+    ${left}
+  </div>`;
+  return s;
+}
+export const x = () => '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+export const arrowBack = () => '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+export const arrowNext = () => '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
+export const calIcon = () => '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+
+export function footer(s) {
+  const el = $('#contact');
+  if (!el) return;
+  el.className = 'foot';
+  el.innerHTML = `<div class="wrap"><span>© ${new Date().getFullYear()} عقار محارب</span>
+    <span>${s.phone ? `<a href="tel:${esc(s.phone)}" dir="ltr">${esc(s.phone)}</a>` : ''} ${s.whatsapp ? ` · <a href="${waLink(s)}" target="_blank" rel="noopener">واتساب</a>` : ''}</span></div>`;
+}
+
+// ---------- اللوحة السفلية ----------
+export function sheet(html, { label = '', onClose } = {}) {
+  const scrim = document.createElement('div');
+  scrim.className = 'scrim';
+  scrim.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(label)}">${html}</div>`;
+  const prevOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  const close = () => {
+    scrim.remove();
+    document.body.style.overflow = prevOverflow;
+    document.removeEventListener('keydown', onKey);
+    onClose && onClose();
+  };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  scrim.addEventListener('click', (e) => { if (e.target === scrim || e.target.closest('[data-close]')) close(); });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(scrim);
+  const first = scrim.querySelector('button, a, input');
+  first && first.focus({ preventScroll: true });
+  return { el: scrim.firstElementChild, close };
+}
+
+function galleryHtml(pics, alt) {
+  return `<div class="sheet-img"><img data-main src="${esc(img(pics[0] || ''))}" alt="${esc(alt)}">
+    <button class="x-btn" type="button" data-close aria-label="إغلاق">${x()}</button>
+    ${pics.length > 1 ? `<span class="count-pill" data-count>١ / ${num(pics.length)}</span>` : ''}</div>
+    ${pics.length > 1 ? `<div class="thumbs">${pics.map((p, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === 0}"><img src="${esc(img(p))}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}`;
+}
+function wireGallery(root, pics) {
+  const main = $('[data-main]', root);
+  const count = $('[data-count]', root);
+  $$('.thumbs button', root).forEach((b) => b.addEventListener('click', () => {
+    const i = Number(b.dataset.i);
+    main.style.opacity = '0';
+    setTimeout(() => { main.src = img(pics[i]); main.style.opacity = '1'; }, 150);
+    main.style.transition = 'opacity .25s ease';
+    if (count) count.textContent = `${num(i + 1)} / ${num(pics.length)}`;
+    $$('.thumbs button', root).forEach((x) => x.setAttribute('aria-current', x === b));
+  }));
+}
+const uniq = (a) => a.filter(Boolean).filter((x, i, arr) => arr.indexOf(x) === i);
+
+// معاينة القرية
+export function villagePreview(v, { onChoose, chooseLabel = 'اختار القرية دي' } = {}) {
+  const pics = uniq([v.cover_image, ...(v.gallery || [])]);
+  const feats = (v.village_features || []).map((x) => x.features).filter(Boolean).sort((a, b) => a.sort_order - b.sort_order).slice(0, 8);
+  const cs = v.chalets || [];
+  const rentMin = Math.min(...cs.filter((c) => c.offer_type === 'rent' && c.price_night).map((c) => c.price_night));
+  const s = sheet(`${galleryHtml(pics, v.name)}
+    <div class="sheet-pad">
+      <h2 class="h2" style="margin:0">${esc(v.name)}</h2>
+      ${v.tagline ? `<div class="sub" style="font-size:13px">${esc(v.tagline)}</div>` : ''}
+      ${v.description ? `<p class="prose" style="margin-top:8px">${esc(v.description)}</p>` : ''}
+    </div>
+    ${feats.length ? `<div class="sheet-pad" style="padding-top:0"><div class="feat-grid">${feats.map((f) => `<div class="feat">${icon(f.icon)}${esc(f.name)}</div>`).join('')}</div></div>` : ''}
+    <div class="sheet-pad" style="padding-top:0"><div class="note-box"><span>${num(cs.length)} شاليه متاح</span>${isFinite(rentMin) ? `<b>يبدأ من ${money(rentMin)} / الليلة</b>` : ''}</div></div>
+    <div class="sheet-actions">
+      <button class="btn btn-dark" style="flex:1" type="button" data-choose>${chooseLabel}</button>
+      <button class="btn btn-soft" type="button" data-close>رجوع</button>
+    </div>`, { label: `معاينة ${v.name}` });
+  wireGallery(s.el, pics);
+  $('[data-choose]', s.el).addEventListener('click', () => { s.close(); onChoose && onChoose(v); });
+  return s;
+}
+
+// معاينة الشاليه
+export function chaletPreview(c, { onDates, detailsHref, villageName } = {}) {
+  const pics = uniq([c.cover_image, ...(c.gallery || [])]);
+  const feats = (c.chalet_features || []).map((x) => x.features).filter(Boolean).sort((a, b) => a.sort_order - b.sort_order);
+  const isRent = c.offer_type === 'rent';
+  const s = sheet(`${galleryHtml(pics, c.title)}
+    <div class="sheet-pad">
+      <span class="code">${esc(c.code)}</span>
+      <h2 style="margin:2px 0 0;font-size:18px;font-weight:600">${esc(c.title)}</h2>
+      <div class="sub">${esc(villageName || '')}${c.floor ? ` · ${esc(c.floor)}` : ''}</div>
+      <div class="feat-grid" style="margin-top:12px">
+        <div class="feat">${icon('bed')}${c.rooms != null ? (c.rooms === 0 ? 'استوديو' : `${num(c.rooms)} غرف`) : '—'}</div>
+        <div class="feat">${icon('bath')}${c.bathrooms != null ? `${num(c.bathrooms)} حمام` : '—'}</div>
+        <div class="feat">${icon('users')}${c.max_guests ? `${num(c.max_guests)} أفراد` : '—'}</div>
+        <div class="feat">${icon('eye')}${esc(c.view || '—')}</div>
+      </div>
+      ${feats.length ? `<div class="mini-tags" style="margin-top:10px">${feats.map((f) => `<span>${esc(f.name)}</span>`).join('')}</div>` : ''}
+    </div>
+    <div class="sheet-actions" style="flex-direction:column">
+      <div class="price">${isRent ? `<b>${money(c.price_night)}</b><small>/ الليلة</small>` : `<b>${money(c.price_total)}</b>${c.down_payment ? `<small>مقدم ${money(c.down_payment)}</small>` : ''}`}</div>
+      <div style="display:flex;gap:8px">
+        ${isRent && onDates ? `<button class="btn btn-dark" style="flex:1" type="button" data-dates>اختار التواريخ</button>` : ''}
+        <a class="btn ${isRent && onDates ? 'btn-soft' : 'btn-dark'}" style="${isRent && onDates ? '' : 'flex:1'}" href="${detailsHref}">كل التفاصيل</a>
+      </div>
+    </div>`, { label: `معاينة شاليه ${c.code}` });
+  wireGallery(s.el, pics);
+  const d = $('[data-dates]', s.el);
+  d && d.addEventListener('click', () => { s.close(); onDates(c); });
+  return s;
+}
+
+// ---------- تقويم الحجز ----------
+export async function calendarSheet(c, { from, to, guests = 2, onDone, villageName = '' } = {}) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const max = addDays(today, 365);
+  const { data } = await sb.from('blocked_dates').select('day').eq('chalet_id', c.id).gte('day', iso(today)).lte('day', iso(max));
+  const booked = new Set((data || []).map((r) => r.day));
+  const maxG = c.max_guests || 10;
+  let st = { from: from || null, to: to || null, guests: Math.min(guests, maxG) };
+  let view = st.from ? parse(st.from) : new Date(today);
+  view.setDate(1);
+
+  const s = sheet(`<div class="sheet-handle"></div>
+    <div class="sheet-top"><div><h2>اختار تواريخ الإقامة</h2><div class="sub">شاليه ${esc(c.code)}${villageName ? ` · ${esc(villageName)}` : ''} · ${money(c.price_night)} / الليلة</div></div>
+      <button class="x-btn" type="button" data-close aria-label="إغلاق" style="background:var(--chip)">${x()}</button></div>
+    <div class="cal-nav"><button type="button" data-prev aria-label="الشهر اللي فات"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button><b data-month></b><button type="button" data-next aria-label="الشهر الجاي"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button></div>
+    <div class="cal" data-grid></div>
+    <div class="legend"><span><i style="background:var(--chip);border:1px solid var(--line)"></i>محجوز</span><span><i style="background:var(--ink);border-radius:50%"></i>اختيارك</span><span><i style="border:1px solid var(--line-2)"></i>متاح</span></div>
+    <div class="cal-msg" data-msg aria-live="polite"></div>
+    <div class="stepper"><span><b style="font-size:14px">عدد الأفراد</b><br><small class="sub">أقصى عدد ${num(maxG)}</small></span>
+      <div><button type="button" data-plus aria-label="زيادة">+</button><b data-g></b><button type="button" data-minus aria-label="تقليل">−</button></div></div>
+    <div class="sheet-actions" style="margin-top:14px;align-items:center">
+      <div style="flex:1"><b data-total style="font-size:17px;font-weight:600;display:block"></b><small class="sub" data-sum></small></div>
+      <button class="btn btn-dark" type="button" data-go>كمّل ${arrowNext()}</button>
+    </div>`, { label: 'تقويم الحجز' });
+
+  const grid = $('[data-grid]', s.el);
+  const msg = $('[data-msg]', s.el);
+  const free = (a, b) => { for (let d = parse(a); d < parse(b); d = addDays(d, 1)) if (booked.has(iso(d))) return false; return true; };
+
+  function draw() {
+    $('[data-month]', s.el).textContent = `${MONTHS[view.getMonth()]} ${num(view.getFullYear())}`;
+    const first = new Date(view);
+    const offset = (first.getDay() + 1) % 7;
+    const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+    let h = ['سبت', 'أحد', 'إتنين', 'تلات', 'أربع', 'خميس', 'جمعة'].map((w) => `<span class="wd">${w}</span>`).join('');
+    for (let i = 0; i < offset; i++) h += '<span></span>';
+    for (let d = 1; d <= days; d++) {
+      const date = new Date(view.getFullYear(), view.getMonth(), d);
+      const k = iso(date);
+      const past = date < today;
+      const isB = booked.has(k);
+      const edge = k === st.from || k === st.to;
+      const inR = st.from && st.to && k > st.from && k < st.to;
+      const cls = ['d', past && 'past', isB && 'booked', edge && 'edge', edge && !st.to && 'only', inR && 'in'].filter(Boolean).join(' ');
+      h += `<button type="button" class="${cls}" data-day="${k}" ${past || isB ? 'disabled' : ''} aria-label="${fmtDay(k)}${isB ? ' – محجوز' : ''}" ${edge ? 'aria-pressed="true"' : ''}>${edge ? `<span>${num(d)}</span>` : num(d)}</button>`;
+    }
+    grid.innerHTML = h;
+    $('[data-prev]', s.el).disabled = view <= new Date(today.getFullYear(), today.getMonth(), 1);
+    $('[data-next]', s.el).disabled = view >= new Date(max.getFullYear(), max.getMonth(), 1);
+    $('[data-g]', s.el).textContent = num(st.guests);
+    $('[data-minus]', s.el).disabled = st.guests <= 1;
+    $('[data-plus]', s.el).disabled = st.guests >= maxG;
+    const n = st.from && st.to ? nightsBetween(st.from, st.to) : 0;
+    $('[data-total]', s.el).textContent = n ? money(n * (c.price_night || 0)) : (st.from ? 'اختار يوم المغادرة' : 'اختار يوم الوصول');
+    $('[data-sum]', s.el).textContent = n ? `${fmtRange(st.from, st.to)} · ${num(n)} ليالي` : (st.from ? `الوصول ${fmtDay(st.from)}` : '');
+    $('[data-go]', s.el).disabled = !n;
+  }
+  grid.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-day]');
+    if (!b || b.disabled) return;
+    const k = b.dataset.day;
+    msg.textContent = '';
+    if (!st.from || st.to || k <= st.from) { st.from = k; st.to = null; }
+    else if (!free(st.from, k)) { msg.textContent = 'فيه أيام محجوزة في الفترة دي — اختار فترة تانية'; st.from = k; st.to = null; }
+    else st.to = k;
+    draw();
+  });
+  $('[data-prev]', s.el).addEventListener('click', () => { view.setMonth(view.getMonth() - 1); draw(); });
+  $('[data-next]', s.el).addEventListener('click', () => { view.setMonth(view.getMonth() + 1); draw(); });
+  $('[data-plus]', s.el).addEventListener('click', () => { st.guests = Math.min(maxG, st.guests + 1); draw(); });
+  $('[data-minus]', s.el).addEventListener('click', () => { st.guests = Math.max(1, st.guests - 1); draw(); });
+  $('[data-go]', s.el).addEventListener('click', () => { s.close(); onDone && onDone({ ...st }); });
+  if (st.from && st.to && !free(st.from, st.to)) { st.to = null; msg.textContent = 'التواريخ اللي كنت مختارها بقت محجوزة — اختار تاني'; }
+  draw();
+  return s;
+}
+
+export function statusBadge(s) {
+  return { available: '<span class="badge b-ok">متاح</span>', reserved: '<span class="badge b-warn">محجوز</span>', sold: '<span class="badge b-off">تم البيع</span>' }[s] || '';
+}

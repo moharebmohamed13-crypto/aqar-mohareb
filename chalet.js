@@ -1,146 +1,152 @@
-import { sb, img, esc, num, money, icon, qs, mountChrome, waLink, waMessage, showError, STATUS, OFFER, carousel } from './lib.js';
+import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x } from './ui.js';
 
-const settings = await mountChrome('chalets');
-const page = document.getElementById('page');
-const id = qs('id');
+const p = params();
+const page = $('#page');
+const fromSite = document.referrer && new URL(document.referrer).host === location.host;
+const s = await bar({ back: fromSite ? 'javascript:history.back()' : 'index.html', title: 'تفاصيل الشاليه' });
+document.body.classList.add('has-dock');
+footer(s);
 
-try {
-  if (!/^[0-9a-f-]{36}$/i.test(id || '')) throw Object.assign(new Error('bad id'), { notFound: true });
-  const { data: c, error } = await sb
-    .from('chalets')
-    .select('*, villages(id, name, slug, tagline, cover_image, village_features(features(name, sort_order))), chalet_features(features(name, icon, sort_order))')
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  if (!c) throw Object.assign(new Error('not found'), { notFound: true });
-  render(c);
-} catch (e) {
-  if (e.notFound) page.innerHTML = '<div class="empty" style="margin-top:48px">الشاليه ده مش موجود أو اتشال. <a href="index.html">ارجع للرئيسية</a></div>';
-  else showError(page, e);
-}
+const { data: c } = /^[0-9a-f-]{36}$/i.test(p.id || '')
+  ? await sb.from('chalets').select('*, villages(id, name, slug, cover_image, village_features(features(name, sort_order))), chalet_features(features(name, icon, sort_order))').eq('id', p.id).maybeSingle()
+  : { data: null };
 
-function render(c) {
+if (!c) {
+  page.innerHTML = '<div class="wrap" style="padding-top:24px"><div class="empty">الشاليه ده مش موجود أو اتشال. <a href="index.html">ارجع للرئيسية</a></div></div>';
+} else {
   const v = c.villages || {};
-  document.title = `${c.title} – ${v.name || ''} | عقار محارب`;
+  const rent = c.offer_type === 'rent';
+  const can = c.status === 'available';
   const pics = [c.cover_image, ...(c.gallery || [])].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i);
   const feats = (c.chalet_features || []).map((x) => x.features).filter(Boolean).sort((a, b) => a.sort_order - b.sort_order);
-  const vfeats = (v.village_features || []).map((x) => x.features).filter(Boolean).sort((a, b) => a.sort_order - b.sort_order).slice(0, 3);
-  const st = STATUS[c.status] || STATUS.available;
-  const isRent = c.offer_type === 'rent';
-  const unavailable = c.status !== 'available';
+  let stay = rent && p.from && p.to && nightsBetween(p.from, p.to) > 0 ? { from: p.from, to: p.to, guests: Number(p.g) || 2 } : null;
+  let cur = 0;
+  document.title = `${c.title} – ${v.name || ''} | عقار محارب`;
 
   const specs = [
-    ['bed', 'الغرف', c.rooms != null ? num(c.rooms) : null],
-    ['bath', 'الحمامات', c.bathrooms != null ? num(c.bathrooms) : null],
-    ['area', 'المساحة', c.area_m2 ? `${num(c.area_m2)} م²` : null],
-    ['floor', 'الدور', c.floor],
-    ['eye', 'الفيو', c.view],
-    ['users', 'أقصى عدد أفراد', c.max_guests ? num(c.max_guests) : null],
-  ].filter((s) => s[2]);
+    ['bed', c.rooms === 0 ? 'استوديو' : c.rooms != null ? num(c.rooms) : null, c.rooms === 0 ? 'النوع' : 'غرف'],
+    ['bath', c.bathrooms != null ? num(c.bathrooms) : null, 'حمام'],
+    ['area', c.area_m2 ? `${num(c.area_m2)} م²` : null, 'المساحة'],
+    ['floor', c.floor, 'الدور'],
+    ['eye', c.view, 'الفيو'],
+    ['users', c.max_guests ? num(c.max_guests) : null, 'أفراد'],
+  ].filter((x) => x[1]);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const bookCard = isRent ? `
-    <span class="badge badge-gold" style="align-self:flex-start">للإيجار</span>
-    <div><span class="big-price">${money(c.price_night)}</span> <span style="color:var(--muted-2)">/ الليلة</span></div>
-    ${c.price_week ? `<span style="color:var(--muted)">الأسبوع: ${money(c.price_week)}</span>` : ''}
-    <form id="book" style="display:flex;flex-direction:column;gap:14px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <label class="field">الوصول<input type="date" name="from" min="${today}" required></label>
-        <label class="field">المغادرة<input type="date" name="to" min="${today}" required></label>
+  function render() {
+    const n = stay ? nightsBetween(stay.from, stay.to) : 0;
+    page.innerHTML = `
+    <div class="wrap c-layout">
+      <div>
+        <div class="gal" style="margin-inline:-16px">
+          <img class="am-zoom" id="main" src="${esc(img(pics[cur] || ''))}" alt="${esc(c.title)}">
+          ${pics.length > 1 ? `<span class="count-pill" id="cnt">${num(cur + 1)} / ${num(pics.length)}</span>` : ''}
+        </div>
+        ${pics.length > 1 ? `<div class="thumbs" style="padding-inline:0">${pics.map((q, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === cur}"><img src="${esc(img(q))}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}
+        <div class="c-head am-up">
+          <div style="display:flex;gap:6px;align-items:center">${statusBadge(c.status)}<span class="tag code" style="padding:2px 9px">${esc(c.code)}</span></div>
+          <h1>${esc(c.title)}</h1>
+          <a href="village.html?v=${encodeURIComponent(v.slug || v.id)}" style="display:flex;gap:6px;align-items:center;font-size:14px">${icon('pin')} قرية ${esc(v.name || '')}</a>
+        </div>
+        ${rent && can ? `<div class="stay am-up am-d1"><span class="ic">${calIcon()}</span>
+          <span>${stay ? `<b>${fmtRange(stay.from, stay.to)} · ${num(n)} ليالي</b><small>${num(stay.guests)} أفراد · الإجمالي ${money(n * (c.price_night || 0))}</small>` : `<b>اختار تواريخ الإقامة</b><small>شوف الأيام المتاحة في التقويم</small>`}</span>
+          <button class="btn btn-sm" type="button" data-cal style="background:transparent;border-color:#5A554B;color:var(--gold)">${stay ? 'تغيير' : 'التقويم'}</button></div>` : ''}
+        <div class="spec-grid am-list">${specs.map(([ic, val, l]) => `<div class="spec">${icon(ic)}<b>${esc(val)}</b><small>${l}</small></div>`).join('')}</div>
+        ${feats.length ? `<div class="block"><h2 class="h3">مميزات الشاليه</h2><div class="feat-grid am-list">${feats.map((f) => `<div class="feat" style="background:#fff;border:1px solid var(--line)">${icon(f.icon)}${esc(f.name)}</div>`).join('')}</div></div>` : ''}
+        ${c.description ? `<div class="block"><h2 class="h3">عن الشاليه</h2><p class="prose">${esc(c.description)}</p></div>` : ''}
       </div>
-      <label class="field">عدد الأفراد
-        <select name="guests">${Array.from({ length: Math.max(c.max_guests || 6, 1) }, (_, i) => `<option value="${i + 1}" ${i + 1 === 2 ? 'selected' : ''}>${num(i + 1)}</option>`).join('')}</select>
-      </label>
-      <p class="note" id="nights"></p>
-      <button class="btn btn-gold btn-block" type="submit" ${unavailable ? 'disabled style="opacity:.6;cursor:not-allowed"' : ''}>${icon('whatsapp')} ${unavailable ? 'غير متاح حاليًا' : 'احجز عبر واتساب'}</button>
-    </form>
-    <p class="note">هتتفتح رسالة واتساب فيها كود الشاليه والتواريخ، وهنأكد معاك التوفر.</p>` : `
-    <span class="badge badge-dark" style="align-self:flex-start">للبيع</span>
-    <div><div style="color:var(--muted-2);font-size:14px">السعر الإجمالي</div><div class="big-price">${money(c.price_total)}</div></div>
-    <div class="rows">
-      ${c.down_payment ? `<div><span>المقدم</span><b>${money(c.down_payment)}</b></div>` : ''}
-      ${c.installment_period ? `<div><span>مدة التقسيط</span><b>${esc(c.installment_period)}</b></div>` : ''}
-      ${c.price_total && c.down_payment ? `<div><span>الباقي بعد المقدم</span><b>${money(c.price_total - c.down_payment)}</b></div>` : ''}
-    </div>
-    <a class="btn btn-gold btn-block" href="${waLink(settings, waMessage(settings, c, v))}" target="_blank" rel="noopener">${icon('whatsapp')} استفسر عبر واتساب</a>
-    <a class="btn btn-outline btn-block" href="${waLink(settings, `${waMessage(settings, c, v)} — وعايز أحدد معاد معاينة`)}" target="_blank" rel="noopener">اطلب معاينة</a>`;
-
-  page.innerHTML = `
-    <nav class="crumbs" aria-label="مسار الصفحة"><a href="index.html">الرئيسية</a><span>/</span><a href="village.html?v=${encodeURIComponent(v.slug || v.id)}">${esc(v.name)}</a><span>/</span><strong>شاليه ${esc(c.code)}</strong></nav>
-    <div class="two-col" style="margin-top:20px">
-      <div class="main">
-        <div class="m-gallery-wrap">
-          <div class="m-gallery">${pics.map((p, i) => `<img src="${esc(img(p))}" alt="${esc(c.title)} – صورة ${i + 1}" ${i ? 'loading="lazy"' : ''}>`).join('')}</div>
-        </div>
-        <div class="d-gallery">
-          <div class="chalet-main-img">
-            ${pics[0] ? `<img id="main-img" src="${esc(img(pics[0]))}" alt="${esc(c.title)}">` : ''}
-            ${pics.length > 1 ? `<span class="count" id="img-count">١ / ${num(pics.length)}</span>` : ''}
+      <div class="c-side">
+        <div class="block" style="margin-top:22px">
+          <h2 class="h3">${rent ? 'تفاصيل السعر' : 'السعر'}</h2>
+          <div class="rows">
+            ${rent ? `
+              <div><span>سعر الليلة</span><b>${money(c.price_night)}</b></div>
+              ${c.price_week ? `<div><span>سعر الأسبوع</span><b>${money(c.price_week)}</b></div>` : ''}
+              ${n ? `<div><span>${money(c.price_night)} × ${num(n)} ليالي</span><b>${money(n * (c.price_night || 0))}</b></div><div class="tot"><span>الإجمالي</span><b>${money(n * (c.price_night || 0))}</b></div>` : ''}`
+            : `
+              <div class="tot"><span>السعر الإجمالي</span><b>${money(c.price_total)}</b></div>
+              ${c.down_payment ? `<div><span>المقدم</span><b>${money(c.down_payment)}</b></div>` : ''}
+              ${c.installment_period ? `<div><span>مدة التقسيط</span><b>${esc(c.installment_period)}</b></div>` : ''}`}
           </div>
-          ${pics.length > 1 ? `<div class="thumbs">${pics.map((p, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === 0}"><img src="${esc(img(p))}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}
         </div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;gap:8px;align-items:center"><span class="badge ${st.cls}">${st.label}</span><span class="badge" style="background:var(--chip);font-family:var(--latin);font-size:12px;direction:ltr">${esc(c.code)}</span></div>
-          <h1 class="page-title" style="font-size:clamp(28px,3.4vw,44px)">${esc(c.title)}</h1>
-          <a href="village.html?v=${encodeURIComponent(v.slug || v.id)}" style="display:flex;gap:8px;align-items:center">${icon('pin')} قرية ${esc(v.name)}</a>
-        </div>
-        ${specs.length ? `<div class="spec-grid">${specs.map(([ic, l, val]) => `<div class="spec">${icon(ic)}<small>${l}</small><b>${esc(val)}</b></div>`).join('')}</div>` : ''}
-        ${c.description ? `<div><h2 class="h2">عن الشاليه</h2><p class="prose">${esc(c.description)}</p></div>` : ''}
-        ${feats.length ? `<div><h2 class="h2">مميزات الشاليه</h2><div class="check-list">${feats.map((f) => `<span>${icon('check')}${esc(f.name)}</span>`).join('')}</div></div>` : ''}
-        <a class="village-link" href="village.html?v=${encodeURIComponent(v.slug || v.id)}">
-          <div style="display:flex;gap:16px;align-items:center">
-            ${v.cover_image ? `<img src="${esc(img(v.cover_image))}" alt="">` : ''}
-            <div><div style="font-size:13px;color:var(--muted-2)">الشاليه ده في قرية</div><div style="font-family:var(--display);font-size:24px;font-weight:700">${esc(v.name)}</div><div style="font-size:14px;color:var(--muted)">${vfeats.map((f) => esc(f.name)).join(' · ')}</div></div>
-          </div>
-          <span class="more">مميزات القرية ${icon('arrow')}</span>
-        </a>
+        <div class="dock"><div class="wrap">
+          <div class="p">${rent ? `<b>${n ? money(n * (c.price_night || 0)) : money(c.price_night)}</b><small>${n ? `${num(n)} ليالي` : '/ الليلة'}</small>` : `<b>${money(c.price_total)}</b><small>${c.down_payment ? `مقدم ${money(c.down_payment)}` : 'السعر الإجمالي'}</small>`}</div>
+          ${can ? `<button class="btn btn-dark am-cta" type="button" data-req>${rent ? 'اطلب الحجز' : 'اطلب معاينة'}</button>` : `<span class="badge b-off" style="padding:8px 12px">${c.status === 'sold' ? 'تم البيع' : 'غير متاح حاليًا'}</span>`}
+          <a class="btn btn-soft" href="${waLink(s, waMessage(s, c, v) + (stay ? `\nمن ${stay.from} لـ ${stay.to} · ${stay.guests} أفراد` : ''))}" target="_blank" rel="noopener" aria-label="تواصل عبر واتساب">${icon('whatsapp')}</a>
+        </div></div>
       </div>
-      <aside id="book-aside"><div class="book-card">${bookCard}
-        <hr style="border:0;border-top:1px solid #ECE7DC;margin:0">
-        ${settings.phone ? `<a href="tel:${esc(settings.phone)}" style="display:flex;justify-content:center;gap:8px;font-weight:600">${icon('phone')} أو اتصل: <span dir="ltr">${esc(settings.phone)}</span></a>` : ''}
-      </div></aside>
     </div>`;
+  }
 
-  // شريط الحجز السفلي (موبايل)
-  const bar = document.createElement('div');
-  bar.className = 'book-bar';
-  bar.innerHTML = `<div><b>${isRent ? money(c.price_night) : money(c.price_total)}</b>${isRent ? '<small> / الليلة</small>' : ''}<small class="st ${st.cls}">${st.label}</small></div>
-    <a class="btn btn-gold" href="#book-aside">${icon('whatsapp')} ${isRent ? 'احجز الآن' : 'استفسر'}</a>`;
-  document.body.appendChild(bar);
-  document.body.classList.add('has-book-bar');
-  carousel(page.querySelector('.m-gallery'));
+  const openCal = () => calendarSheet(c, {
+    from: stay?.from, to: stay?.to, guests: stay?.guests, villageName: v.name,
+    onDone: (r) => {
+      stay = r;
+      history.replaceState(null, '', `chalet.html?id=${c.id}&from=${r.from}&to=${r.to}&g=${r.guests}`);
+      render();
+    },
+  });
 
-  // معرض الصور
-  const main = page.querySelector('#main-img');
-  const count = page.querySelector('#img-count');
-  page.querySelectorAll('.thumbs button').forEach((b) => b.addEventListener('click', () => {
-    const i = Number(b.dataset.i);
-    main.src = img(pics[i]);
-    if (count) count.textContent = `${num(i + 1)} / ${num(pics.length)}`;
-    page.querySelectorAll('.thumbs button').forEach((x) => x.setAttribute('aria-current', x === b));
-  }));
-
-  // الحجز عبر واتساب
-  const form = page.querySelector('#book');
-  if (form) {
-    const nightsEl = page.querySelector('#nights');
-    const calc = () => {
-      const f = form.from.value, t = form.to.value;
-      if (f) form.to.min = f;
-      if (f && t) {
-        const n = Math.round((new Date(t) - new Date(f)) / 86400000);
-        nightsEl.textContent = n > 0 ? `${num(n)} ليلة${c.price_night ? ` · تقريبًا ${money(n * c.price_night)}` : ''}` : 'تاريخ المغادرة لازم يكون بعد الوصول';
-        return n;
-      }
-      nightsEl.textContent = '';
-      return 0;
-    };
-    form.addEventListener('change', calc);
-    form.addEventListener('submit', (e) => {
+  function openRequest() {
+    if (rent && !stay) return openCal();
+    const n = stay ? nightsBetween(stay.from, stay.to) : 0;
+    const sh = sheet(`<div class="sheet-handle"></div>
+      <div class="sheet-top"><h2>${rent ? 'طلب الحجز' : 'طلب معاينة'}</h2><button class="x-btn" type="button" data-close aria-label="إغلاق" style="background:var(--chip)">${x()}</button></div>
+      <form class="sheet-pad" id="rq" style="display:flex;flex-direction:column;gap:12px" novalidate>
+        <div class="sum"><img src="${esc(img(c.cover_image))}" alt=""><div><b>${esc(c.title)}</b><span>${esc(v.name || '')} · ${esc(c.code)}</span>
+          ${stay ? `<span style="color:var(--ink)">${fmtRange(stay.from, stay.to)} · ${num(n)} ليالي · ${num(stay.guests)} أفراد</span><b>${money(n * (c.price_night || 0))}</b>` : `<b>${money(c.price_total)}</b>`}</div></div>
+        <label class="field">الاسم<input name="name" autocomplete="name" required minlength="2" maxlength="80" placeholder="اسمك بالكامل"></label>
+        <label class="field">رقم الموبايل<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required dir="ltr" style="text-align:right" placeholder="01xxxxxxxxx"></label>
+        <label class="field">ملاحظات (اختياري)<textarea name="notes" rows="2" maxlength="500" placeholder="${rent ? 'أي طلب خاص؟' : 'أنسب معاد للمعاينة؟'}"></textarea></label>
+        <p class="note-box" style="margin:0;display:block;line-height:1.7">مفيش دفع دلوقتي. هنتواصل معاك نأكد ${rent ? 'الحجز' : 'المعاد'} والتفاصيل.</p>
+        <p class="err" id="rq-err" hidden></p>
+        <button class="btn btn-dark btn-block" type="submit">${rent ? 'ابعت طلب الحجز' : 'ابعت الطلب'}</button>
+        <a class="btn btn-soft btn-block" href="${waLink(s, waMessage(s, c, v) + (stay ? `\nمن ${stay.from} لـ ${stay.to} · ${stay.guests} أفراد` : ''))}" target="_blank" rel="noopener">${icon('whatsapp')} أو كمّل على واتساب</a>
+      </form>`, { label: 'طلب الحجز' });
+    const f = $('#rq', sh.el);
+    const err = $('#rq-err', sh.el);
+    f.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (calc() <= 0) return;
-      const msg = `${waMessage(settings, c, v)}\nمن ${form.from.value} لـ ${form.to.value}\nعدد الأفراد: ${form.guests.value}`;
-      window.open(waLink(settings, msg), '_blank', 'noopener');
+      err.hidden = true;
+      const name = f.name.value.trim();
+      const phone = f.phone.value.replace(/[^\d+]/g, '');
+      if (name.length < 2) { err.textContent = 'اكتب اسمك'; err.hidden = false; return f.name.focus(); }
+      if (phone.length < 8) { err.textContent = 'اكتب رقم موبايل صحيح'; err.hidden = false; return f.phone.focus(); }
+      const btn = f.querySelector('[type=submit]');
+      btn.disabled = true; btn.textContent = 'بيتبعت...';
+      const { data: id, error } = await sb.rpc('request_booking', {
+        p_chalet: c.id, p_kind: rent ? 'rent' : 'viewing', p_name: name, p_phone: phone,
+        p_in: stay?.from || null, p_out: stay?.to || null, p_guests: stay?.guests || null, p_notes: f.notes.value,
+      });
+      if (error) {
+        btn.disabled = false; btn.textContent = rent ? 'ابعت طلب الحجز' : 'ابعت الطلب';
+        err.textContent = error.message.includes('dates_not_available') ? 'للأسف الأيام دي اتحجزت دلوقتي — اختار تواريخ تانية.' : 'حصلت مشكلة، جرّب تاني أو كلمنا واتساب.';
+        err.hidden = false;
+        return;
+      }
+      sh.el.innerHTML = `<div class="done">
+        <span class="ok am-pop">${icon('check')}</span>
+        <h2>طلبك وصل</h2>
+        <p>رقم الطلب <b style="color:var(--ink)">#${esc(id)}</b><br>هنكلمك قريب على ${esc(phone)} نأكد ${rent ? 'الحجز' : 'المعاد'}.</p>
+        <a class="btn btn-gold" href="index.html" style="margin-top:8px">رجوع للرئيسية</a>
+        <button class="btn btn-soft" type="button" data-close>إغلاق</button>
+      </div>`;
     });
   }
+
+  page.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-i]');
+    if (t) {
+      cur = Number(t.dataset.i);
+      const m = $('#main');
+      m.classList.remove('am-zoom'); m.style.transition = 'opacity .25s ease'; m.style.opacity = '0';
+      setTimeout(() => { m.src = img(pics[cur]); m.style.opacity = '1'; }, 150);
+      const cnt = $('#cnt'); if (cnt) cnt.textContent = `${num(cur + 1)} / ${num(pics.length)}`;
+      $$('.thumbs button', page).forEach((b) => b.setAttribute('aria-current', b === t));
+    }
+    if (e.target.closest('[data-cal]')) openCal();
+    if (e.target.closest('[data-req]')) openRequest();
+  });
+  render();
+  if (p.book === '1') openRequest();
 }

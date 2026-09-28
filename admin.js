@@ -117,10 +117,19 @@ function imageManager(el, { images = [], folder, current = null, currentLabel = 
 
 // ============ الهيكل ============
 const NAV = [
+  ['requests', '#/requests', 'طلبات الحجز', 'users'],
+  ['calendar', '#/calendar', 'تقويم الحجوزات', 'grid'],
   ['villages', '#/villages', 'القرى', 'lagoon'],
   ['chalets', '#/chalets', 'الشاليهات', 'roof'],
   ['settings', '#/settings', 'إعدادات الموقع', 'star'],
 ];
+let pendingCount = 0;
+async function refreshPending() {
+  const { count } = await sb.from('booking_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+  pendingCount = count || 0;
+  const b = document.getElementById('pending-badge');
+  if (b) { b.textContent = pendingCount; b.hidden = !pendingCount; }
+}
 function shell(active, inner) {
   app.innerHTML = `
   <div class="mobile-top">
@@ -131,7 +140,7 @@ function shell(active, inner) {
     <aside class="side" id="side">
       <a class="brand" href="#/chalets"><img src="${ROOT}logo-icon.png" alt=""><span><span class="brand-name">عقار محارب</span><small>لوحة التحكم</small></span></a>
       <nav aria-label="قائمة الأدمن">
-        ${NAV.map(([k, h, t, ic]) => `<a href="${h}" class="${k === active ? 'active' : ''}">${icon(ic)}${t}</a>`).join('')}
+        ${NAV.map(([k, h, t, ic]) => `<a href="${h}" class="${k === active ? 'active' : ''}">${icon(ic)}${t}${k === 'requests' ? `<span id="pending-badge" class="nav-badge" ${pendingCount ? '' : 'hidden'}>${pendingCount}</span>` : ''}</a>`).join('')}
         <a href="${ROOT}index.html" target="_blank" rel="noopener">${icon('eye')}عرض الموقع</a>
       </nav>
       <div class="side-foot">
@@ -144,6 +153,7 @@ function shell(active, inner) {
   $('#logout').onclick = async () => { await sb.auth.signOut(); };
   $('#open-side').onclick = () => $('#side').classList.toggle('open');
   $$('#side nav a').forEach((a) => a.addEventListener('click', () => $('#side').classList.remove('open')));
+  refreshPending();
   return $('#main');
 }
 
@@ -551,6 +561,141 @@ async function settingsView() {
   };
 }
 
+
+// ============ طلبات الحجز ============
+const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+const dstr = (s) => { if (!s) return ''; const [y, m, d] = s.split('-').map(Number); return `${num(d)} ${MONTHS_AR[m - 1]}`; };
+const nights = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+const waNum = (n) => { let d = String(n || '').replace(/\D/g, ''); if (d.startsWith('0')) d = '2' + d; return d; };
+const RS = { pending: ['جديد', 'badge-warn'], accepted: ['مقبول', 'badge-ok'], rejected: ['مرفوض', 'badge-off'] };
+
+async function requestsView() {
+  const main = shell('requests', '<div class="skeleton"></div>');
+  let filter = 'pending';
+  const load = async () => {
+    const { data, error } = await sb.from('booking_requests').select('*, chalets(code, title, villages(name))').order('created_at', { ascending: false }).limit(300);
+    if (error) { fail(error); return []; }
+    return data;
+  };
+  let rows = await load();
+  const draw = () => {
+    const list = filter === 'all' ? rows : rows.filter((r) => r.status === filter);
+    const c = (k) => rows.filter((r) => k === 'all' || r.status === k).length;
+    main.innerHTML = `
+      <div class="admin-top"><div><h1>طلبات الحجز</h1><p>لما تقبل طلب إيجار، أيامه بتتقفل في التقويم تلقائي</p></div></div>
+      <div class="tabs" role="tablist" style="margin-bottom:16px;max-width:560px">
+        ${[['pending', 'جديدة'], ['accepted', 'مقبولة'], ['rejected', 'مرفوضة'], ['all', 'الكل']].map(([k, t]) => `<button role="tab" type="button" data-f="${k}" aria-selected="${filter === k}">${t} (${num(c(k))})</button>`).join('')}
+      </div>
+      <div class="req-grid">${list.length ? list.map((r) => {
+        const [lbl, cls] = RS[r.status];
+        const n = r.check_in ? nights(r.check_in, r.check_out) : 0;
+        return `<article class="box req" data-id="${r.id}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:17px">${esc(r.name)}</b><span class="badge ${cls}">${lbl}</span></div>
+          <div class="muted" style="font-size:13px">#${r.id} · ${new Date(r.created_at).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn btn-outline" style="min-height:40px;padding:0 12px;font-size:14px" href="tel:${esc(r.phone)}" dir="ltr">${icon('phone')} ${esc(r.phone)}</a>
+            <a class="btn btn-outline" style="min-height:40px;padding:0 12px;font-size:14px" href="https://wa.me/${waNum(r.phone)}" target="_blank" rel="noopener">${icon('whatsapp')} واتساب</a>
+          </div>
+          <div class="rows-mini">
+            <div><span>الشاليه</span><b>${esc(r.chalets?.code || '')} · ${esc(r.chalets?.villages?.name || '')}</b></div>
+            <div><span>النوع</span><b>${r.kind === 'rent' ? 'حجز إيجار' : 'طلب معاينة (بيع)'}</b></div>
+            ${r.kind === 'rent' ? `<div><span>التواريخ</span><b>${dstr(r.check_in)} ← ${dstr(r.check_out)} · ${num(n)} ليالي</b></div>
+            <div><span>الأفراد</span><b>${num(r.guests || 0)}</b></div>
+            <div><span>الإجمالي</span><b>${money(r.total)}</b></div>` : ''}
+            ${r.notes ? `<div><span>ملاحظات</span><b style="font-weight:400">${esc(r.notes)}</b></div>` : ''}
+          </div>
+          ${r.status === 'pending' ? `<div style="display:flex;gap:8px"><button class="btn btn-dark" style="flex:1;background:#2F5A3A" type="button" data-acc>${r.kind === 'rent' ? 'قبول وقفل الأيام' : 'قبول'}</button><button class="btn btn-outline" type="button" data-rej>رفض</button></div>`
+            : r.status === 'accepted' ? `<button class="btn btn-outline" type="button" data-rej>إلغاء الحجز</button>` : ''}
+        </article>`;
+      }).join('') : '<div class="empty">مفيش طلبات هنا</div>'}</div>`;
+  };
+  main.addEventListener('click', async (e) => {
+    const f = e.target.closest('[data-f]');
+    if (f) { filter = f.dataset.f; draw(); return; }
+    const card = e.target.closest('[data-id]');
+    if (!card) return;
+    const id = Number(card.dataset.id);
+    if (e.target.closest('[data-acc]')) {
+      card.classList.add('busy');
+      const { error } = await sb.rpc('accept_request', { p_id: id });
+      if (error) { card.classList.remove('busy'); return fail(error, error.message.includes('dates_conflict') ? 'الأيام دي فيها حجز تاني — مينفعش تتقبل' : 'حصلت مشكلة'); }
+      toast('اتقبل الطلب ✓');
+    } else if (e.target.closest('[data-rej]')) {
+      if (!(await confirmBox('رفض / إلغاء الطلب؟', 'لو الطلب كان مقبول، أيامه هترجع متاحة في التقويم.', 'تأكيد'))) return;
+      card.classList.add('busy');
+      const { error } = await sb.rpc('reject_request', { p_id: id });
+      if (error) { card.classList.remove('busy'); return fail(error); }
+      toast('اتحدث الطلب');
+    } else return;
+    rows = await load(); draw(); refreshPending();
+  });
+  draw();
+}
+
+// ============ تقويم الحجوزات ============
+async function calendarView() {
+  const main = shell('calendar', '<div class="skeleton"></div>');
+  const { data: chalets, error } = await sb.from('chalets').select('id, code, title, offer_type, villages(name)').eq('offer_type', 'rent').order('code');
+  if (error) return fail(error);
+  if (!chalets.length) { main.innerHTML = '<div class="empty">مفيش شاليهات إيجار لسه</div>'; return; }
+  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  let cid = q.get('c') && chalets.some((c) => c.id === q.get('c')) ? q.get('c') : chalets[0].id;
+  const t = new Date(); let view = new Date(t.getFullYear(), t.getMonth(), 1);
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  let blocked = new Map(); let pending = new Map();
+
+  async function load() {
+    const a = iso(view); const b = iso(new Date(view.getFullYear(), view.getMonth() + 1, 0));
+    const [{ data: bd }, { data: rq }] = await Promise.all([
+      sb.from('blocked_dates').select('day, request_id, booking_requests(name)').eq('chalet_id', cid).gte('day', a).lte('day', b),
+      sb.from('booking_requests').select('id, name, check_in, check_out').eq('chalet_id', cid).eq('status', 'pending').eq('kind', 'rent').lte('check_in', b).gte('check_out', a),
+    ]);
+    blocked = new Map((bd || []).map((r) => [r.day, r]));
+    pending = new Map();
+    (rq || []).forEach((r) => { for (let d = new Date(r.check_in); d < new Date(r.check_out); d.setDate(d.getDate() + 1)) pending.set(iso(d), r.name); });
+  }
+  function draw() {
+    const today = iso(new Date());
+    const offset = (view.getDay() + 1) % 7;
+    const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+    let cells = ['سبت', 'أحد', 'إتنين', 'تلات', 'أربع', 'خميس', 'جمعة'].map((w) => `<span class="cal-wd">${w}</span>`).join('');
+    for (let i = 0; i < offset; i++) cells += '<span></span>';
+    for (let d = 1; d <= days; d++) {
+      const k = iso(new Date(view.getFullYear(), view.getMonth(), d));
+      const b = blocked.get(k); const pn = pending.get(k); const past = k < today;
+      const cls = b ? (b.request_id ? 'booked' : 'blocked') : pn ? 'pending' : 'free';
+      const label = b ? (b.request_id ? (b.booking_requests?.name || 'محجوز') : 'مقفول') : pn ? `طلب: ${pn}` : '';
+      cells += `<button type="button" class="cal-cell ${cls} ${past ? 'past' : ''}" data-day="${k}" ${b?.request_id || past ? 'disabled' : ''}><b>${num(d)}</b><small>${esc(label)}</small></button>`;
+    }
+    main.innerHTML = `
+      <div class="admin-top"><div><h1>تقويم الحجوزات</h1><p>اضغط على أي يوم فاضي عشان تقفله، واضغط تاني عشان تفتحه</p></div>
+        <label class="field" style="min-width:260px">الشاليه<select id="ch">${chalets.map((c) => `<option value="${c.id}" ${c.id === cid ? 'selected' : ''}>${esc(c.code)} · ${esc(c.villages?.name || '')}</option>`).join('')}</select></label></div>
+      <div class="box">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:10px"><button class="icon-btn" type="button" data-m="-1" aria-label="الشهر اللي فات">›</button><b style="font-size:20px">${MONTHS_AR[view.getMonth()]} ${num(view.getFullYear())}</b><button class="icon-btn" type="button" data-m="1" aria-label="الشهر الجاي">‹</button></div>
+          <div class="cal-legend"><span><i style="background:#1A1A1A"></i>محجوز</span><span><i style="background:#DCD6CA"></i>مقفول من الأدمن</span><span><i style="border:2px dashed #C9A96A"></i>طلب مستني الرد</span></div>
+        </div>
+        <div class="cal-grid">${cells}</div>
+      </div>`;
+  }
+  const reload = async () => { await load(); draw(); };
+  main.addEventListener('change', async (e) => { if (e.target.id === 'ch') { cid = e.target.value; await reload(); } });
+  main.addEventListener('click', async (e) => {
+    const m = e.target.closest('[data-m]');
+    if (m) { view = new Date(view.getFullYear(), view.getMonth() + Number(m.dataset.m), 1); return reload(); }
+    const c = e.target.closest('[data-day]');
+    if (!c || c.disabled) return;
+    const k = c.dataset.day;
+    c.classList.add('busy');
+    const { error: er } = blocked.has(k)
+      ? await sb.from('blocked_dates').delete().eq('chalet_id', cid).eq('day', k).is('request_id', null)
+      : await sb.from('blocked_dates').insert({ chalet_id: cid, day: k });
+    if (er) { c.classList.remove('busy'); return fail(er); }
+    await reload();
+  });
+  await reload();
+}
+
 // ============ التوجيه ============
 async function route() {
   if (!session) return loginView();
@@ -559,12 +704,14 @@ async function route() {
     $('#out').onclick = () => sb.auth.signOut();
     return;
   }
-  const h = location.hash || '#/chalets';
+  const h = location.hash || '#/requests';
   let m;
   if ((m = h.match(/^#\/chalets\/(new|[0-9a-f-]{36})$/))) return chaletForm(m[1] === 'new' ? null : m[1]);
   if ((m = h.match(/^#\/villages\/(new|[0-9a-f-]{36})$/))) return villageForm(m[1] === 'new' ? null : m[1]);
   if (h === '#/villages') return villagesList();
   if (h === '#/settings') return settingsView();
+  if (h === '#/requests') return requestsView();
+  if (h.startsWith('#/calendar')) return calendarView();
   return chaletsList();
 }
 
