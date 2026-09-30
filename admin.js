@@ -528,7 +528,6 @@ async function settingsView() {
         <div class="form-cols">
           <div class="col-main"><div id="imgs"></div></div>
           <div class="col-main">
-            <label class="field">السطر الصغير فوق العنوان<input name="hero_eyebrow" value="${val('hero_eyebrow')}"></label>
             <label class="field">العنوان الرئيسي<input name="hero_title" value="${val('hero_title')}"></label>
             <label class="field">النص تحت العنوان<textarea name="hero_subtitle" rows="3">${val('hero_subtitle')}</textarea></label>
           </div>
@@ -543,6 +542,14 @@ async function settingsView() {
         <label class="field">رسالة الواتساب الجاهزة<input name="whatsapp_message" value="${val('whatsapp_message')}"></label>
         <p class="hint" style="margin:0">{code} بيتبدل بكود الشاليه، و{village} باسم القرية.</p>
       </section>
+      <section class="box"><h2>السوشيال ميديا</h2>
+        <p class="hint" style="margin:0">حط لينك كل حساب كامل (بيبدأ بـ https://) — اللي تسيبه فاضي مش هيظهر في الموقع.</p>
+        <div class="g3">
+          <label class="field">فيسبوك<input type="url" name="facebook" value="${val('facebook')}" dir="ltr" placeholder="https://facebook.com/..."></label>
+          <label class="field">إنستجرام<input type="url" name="instagram" value="${val('instagram')}" dir="ltr" placeholder="https://instagram.com/..."></label>
+          <label class="field">تيك توك<input type="url" name="tiktok" value="${val('tiktok')}" dir="ltr" placeholder="https://tiktok.com/@..."></label>
+        </div>
+      </section>
     </div>
   </form>`;
   const heroList = [...new Set([s.hero_image, ...(s.hero_images || [])].filter(Boolean))];
@@ -552,7 +559,7 @@ async function settingsView() {
     e.preventDefault();
     const fd = new FormData(form);
     const row = { hero_image: imgs.current, hero_images: imgs.list };
-    ['hero_eyebrow', 'hero_title', 'hero_subtitle', 'phone', 'whatsapp', 'address', 'whatsapp_message'].forEach((k) => { row[k] = sOrNull(fd.get(k)); });
+    ['hero_title', 'hero_subtitle', 'phone', 'whatsapp', 'address', 'whatsapp_message', 'facebook', 'instagram', 'tiktok'].forEach((k) => { row[k] = sOrNull(fd.get(k)); });
     form.classList.add('busy');
     const { error: er } = await sb.from('site_settings').update(row).eq('id', 1);
     form.classList.remove('busy');

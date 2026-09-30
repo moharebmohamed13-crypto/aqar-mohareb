@@ -15,44 +15,37 @@
 <body>
 <header id="bar" class="bar"></header>
 <main>
-  <section class="hero" aria-labelledby="h">
+  <section class="hero hero-lite" aria-labelledby="h">
     <img class="hero-bg am-zoom" id="hero-bg" alt="">
     <div class="wrap">
       <div>
-        <div class="eyebrow am-up" id="hero-eyebrow">شاليهات للبيع والإيجار</div>
-        <h1 class="am-up am-d1" id="h">شاليهك على البحر، باختيار أسهل</h1>
-        <p class="am-up am-d2" id="hero-sub">اختار قريتك .. واستمتع بإجازتك</p>
+        <h1 class="am-up" id="h">اختار شاليهك<br>على البحر</h1>
+        <p class="am-up am-d1" id="hero-sub">بيع وإيجار شاليهات في مكان واحد.</p>
       </div>
-      <form class="search-card am-up am-d3" id="search" aria-label="ابدأ البحث">
-        <label class="pick">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-          <span><small>القرية</small><select name="v" aria-label="القرية"><option value="">اختار القرية</option></select></span>
+      <form class="sbar am-up am-d2" id="search" aria-label="بحث">
+        <label class="sf">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          <select name="v" aria-label="القرية"><option value="">اختر القرية</option></select><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </label>
-        <label class="pick">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/></svg>
-          <span><small>نوع العملية</small><select name="o" aria-label="نوع العملية"><option value="">إيجار أو بيع</option><option value="rent">إيجار</option><option value="sale">بيع</option></select></span>
+        <label class="sf">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+          <select name="o" aria-label="نوع العملية"><option value="">بيع أو إيجار</option><option value="rent">إيجار</option><option value="sale">بيع</option></select><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </label>
-        <button class="btn btn-gold btn-block am-cta" type="submit">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-          ابدأ البحث
+        <button class="sgo am-cta" type="submit">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>بحث
         </button>
       </form>
     </div>
   </section>
 
-  <section class="sec wrap" aria-labelledby="vh">
-    <div class="sec-head">
-      <div><span class="kicker">القرى</span><h2 class="h2" id="vh">اختار وجهتك</h2></div>
-      <a href="book.html" style="font-size:13px;font-weight:600">عرض الكل ←</a>
+  <section class="sec wrap" id="villages-sec" aria-labelledby="vh">
+    <div class="vhead">
+      <span class="line"></span>
+      <h2 class="h2" id="vh">اختر قريتك</h2>
+      <p>اكتشف القرى واستعرض الشاليهات المتاحة.</p>
     </div>
-    <div class="row-scroll am-list" id="villages"><div class="skel" style="flex:0 0 140px;min-height:200px"></div><div class="skel" style="flex:0 0 140px;min-height:200px"></div><div class="skel" style="flex:0 0 140px;min-height:200px"></div></div>
-  </section>
-
-  <section class="wrap" style="padding-bottom:8px">
-    <div class="help am-up">
-      <div style="flex:1"><b>محتاج مساعدة؟</b><span>كلمنا ونرشحلك الشاليه المناسب</span></div>
-      <a class="btn btn-line" id="help-wa" href="#" target="_blank" rel="noopener" style="border-color:#F7F6F2;background:transparent;color:#F7F6F2">واتساب</a>
-    </div>
+    <div class="vgrid am-list" id="villages"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+    <button class="more-btn" type="button" id="more" hidden>عرض جميع القرى <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
   </section>
 </main>
 <footer id="contact"></footer>

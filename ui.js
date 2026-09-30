@@ -44,12 +44,27 @@ export const arrowBack = () => '<svg class="icon" viewBox="0 0 24 24" fill="none
 export const arrowNext = () => '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
 export const calIcon = () => '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
 
+const SOCIAL = {
+  facebook: ['فيسبوك', '<path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8z"/>'],
+  instagram: ['إنستجرام', '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor"/>'],
+  tiktok: ['تيك توك', '<path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.5 2.8 2.3 4.6 5 5"/>'],
+  whatsapp: ['واتساب', '<path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c.3 2 2.5 4.2 4.5 4.5l1-1.2 1.8.8c-.2 1-1 1.6-2 1.6-3 0-6-3-6-6 0-1 .6-1.8 1.6-2l.8 1.8z"/>'],
+  phone: ['اتصال', '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>'],
+};
+const safeUrl = (u) => (/^https?:\/\//i.test(u || '') ? u : '');
 export function footer(s) {
   const el = $('#contact');
   if (!el) return;
   el.className = 'foot';
-  el.innerHTML = `<div class="wrap"><span>© ${new Date().getFullYear()} عقار محارب</span>
-    <span>${s.phone ? `<a href="tel:${esc(s.phone)}" dir="ltr">${esc(s.phone)}</a>` : ''} ${s.whatsapp ? ` · <a href="${waLink(s)}" target="_blank" rel="noopener">واتساب</a>` : ''}</span></div>`;
+  const links = {
+    facebook: safeUrl(s.facebook), instagram: safeUrl(s.instagram), tiktok: safeUrl(s.tiktok),
+    whatsapp: s.whatsapp ? waLink(s) : '', phone: s.phone ? `tel:${String(s.phone).replace(/[^\d+]/g, '')}` : '',
+  };
+  const btns = Object.entries(SOCIAL).filter(([k]) => links[k]).map(([k, [label, path]]) =>
+    `<a href="${esc(links[k])}" aria-label="${label}" title="${label}"${k === 'phone' ? '' : ' target="_blank" rel="noopener"'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg></a>`).join('');
+  el.innerHTML = `<div class="wrap">
+    ${btns ? `<div class="foot-h"><b>تابعنا وكلمنا</b><span></span></div><div class="socials">${btns}</div>` : ''}
+    <div class="foot-b"><span>© ${new Date().getFullYear()} عقار محارب</span><span class="en">AQAR MOHAREB</span></div></div>`;
 }
 
 // ---------- اللوحة السفلية ----------
