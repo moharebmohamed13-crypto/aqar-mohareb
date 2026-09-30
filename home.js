@@ -1,7 +1,7 @@
 import { sb, img, esc, num } from './lib.js';
 import { $, bar, footer } from './ui.js';
 
-const s = await bar();
+const s = await bar({ float: true });
 footer(s);
 if (s.hero_image) $('#hero-bg').src = img(s.hero_image);
 if (s.hero_title) $('#h').textContent = s.hero_title;

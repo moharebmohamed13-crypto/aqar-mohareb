@@ -352,3 +352,14 @@ button:active, a:active { transform: scale(.97); }
   .sgo { padding: 0 12px; }
 }
 @media (min-width: 900px) { .socials, .socials:has(> :nth-child(4)) { justify-content: flex-start; gap: 14px; } }
+
+/* هيدر شفاف فوق صورة الواجهة */
+.bar-sp { width: 44px; flex-shrink: 0; }
+.bar-float { position: fixed; left: 0; right: 0; background: transparent; color: var(--ink); transition: background-color .3s ease, box-shadow .3s ease; }
+.bar-float .brand, .bar-float .brand b { color: var(--ink); }
+.bar-float .brand small { color: var(--gold-dark); }
+.bar-float .bar-links a { color: var(--ink); }
+.bar-float .bar-links a:hover { color: var(--gold-dark); }
+.bar-float.scrolled { background: rgba(250,249,246,.9); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--line); }
+.bar-float + main .hero-lite .wrap { padding-top: 84px; min-height: 388px; }
+@media (min-width: 900px) { .bar-float + main .hero-lite .wrap { padding-top: 110px; min-height: 540px; } }

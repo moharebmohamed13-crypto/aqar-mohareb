@@ -24,13 +24,15 @@ export const UNITS = [
 export const unitName = (r) => (UNITS.find((u) => u.rooms === Number(r)) || {}).name || '';
 
 // ---------- الهيدر ----------
-export async function bar({ back, close, title } = {}) {
+export async function bar({ back, close, title, float } = {}) {
   const s = await getSettings();
   const el = $('#bar');
-  el.className = 'bar';
-  const left = close
-    ? `<a class="bar-btn" href="${close}" aria-label="إغلاق">${x()}</a>`
-    : `<a class="bar-btn" href="${waLink(s)}" target="_blank" rel="noopener" aria-label="واتساب">${icon('whatsapp')}</a>`;
+  el.className = float ? 'bar bar-float' : 'bar';
+  if (float) {
+    const onScroll = () => el.classList.toggle('scrolled', window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  }
+  const left = close ? `<a class="bar-btn" href="${close}" aria-label="إغلاق">${x()}</a>` : (back ? '<span class="bar-sp"></span>' : '');
   el.innerHTML = `<div class="wrap">
     ${back ? `<a class="bar-btn" href="${back}" aria-label="رجوع">${arrowBack()}</a>` : ''}
     ${title && back ? `<span class="bar-title">${esc(title)}</span>` : `<a class="brand" href="index.html"><img src="${logo}" alt=""><span><b>عقار محارب</b><small>AQAR MOHAREB</small></span></a>`}
