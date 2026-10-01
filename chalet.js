@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=14';
-import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE, CHECKIN, CHECKOUT } from './ui.js?v=14';
+import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=15';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE, CHECKIN, CHECKOUT } from './ui.js?v=15';
 
 const p = params();
 const page = $('#page');

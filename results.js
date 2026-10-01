@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon } from './lib.js?v=14';
-import { $, params, bar, footer, chaletPreview, calendarSheet, unitName, statusBadge } from './ui.js?v=14';
+import { sb, img, esc, num, money, icon } from './lib.js?v=15';
+import { $, params, bar, footer, chaletPreview, calendarSheet, unitName, statusBadge } from './ui.js?v=15';
 
 const p = params();
 const s = await bar({ back: `book.html?v=${p.v || ''}&o=${p.o || ''}&step=3`, title: 'النتائج' });

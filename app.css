@@ -413,3 +413,4 @@ button:active, a:active { transform: scale(.97); }
 .cal-reset { margin-inline-start: auto; border: 0; background: transparent; color: var(--gold-dark); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; }
 .cal-hint .nights { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 99px; background: var(--ink); color: #fff; font-weight: 700; font-size: 12.5px; }
 .cal-times { margin: -4px 0 10px; font-size: 12px; color: var(--muted); text-align: center; }
+.cal-hint .nights { height: 34px; padding: 0 16px; font-size: 18px; border-radius: 10px; }
