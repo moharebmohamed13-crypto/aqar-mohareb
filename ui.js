@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=12';
+import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=13';
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -166,6 +166,16 @@ export function wireSlider(root, { interval = 3500 } = {}) {
   }
   // سحب بالماوس على الكمبيوتر
   let dragX = null; let startLeft = 0; let startIdx = 0;
+  // الضغط على الصورة يفتحها بمقاسها الكامل
+  let downX = 0; let moved = false;
+  track.addEventListener('pointerdown', (e) => { downX = e.clientX; moved = false; });
+  track.addEventListener('pointermove', (e) => { if (Math.abs(e.clientX - downX) > 8) moved = true; });
+  track.addEventListener('click', (e) => {
+    const im = e.target.closest('img');
+    if (!im || moved) return;
+    hold = Date.now() + 8000;
+    lightbox([...track.querySelectorAll('img')].map((i) => i.currentSrc || i.src), [...track.children].indexOf(im));
+  });
   track.addEventListener('mousedown', (e) => { dragX = e.clientX; startLeft = track.scrollLeft; startIdx = cur; track.classList.add('drag'); e.preventDefault(); });
   window.addEventListener('mousemove', (e) => { if (dragX !== null) track.scrollLeft = startLeft - (e.clientX - dragX); });
   window.addEventListener('mouseup', (e) => {
@@ -180,6 +190,38 @@ export function wireSlider(root, { interval = 3500 } = {}) {
     if (document.hidden || Date.now() < hold || dragX !== null) return;
     go(cur + 1, !reduce);
   }, interval);
+}
+
+// ---------- عرض الصورة بمقاسها الكامل ----------
+export function lightbox(srcs, start = 0) {
+  const n = srcs.length;
+  const el = document.createElement('div');
+  el.className = 'lb';
+  el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'عرض الصور');
+  el.innerHTML = `<div class="lb-track">${srcs.map((u) => `<div class="lb-slide"><img src="${esc(u)}" alt="" draggable="false"></div>`).join('')}</div>
+    <button class="lb-x" type="button" aria-label="إغلاق">${x()}</button>
+    ${n > 1 ? `<span class="lb-count"></span>
+      <button class="lb-nav lb-prev" type="button" aria-label="الصورة اللي قبل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="lb-nav lb-next" type="button" aria-label="الصورة اللي بعد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>` : ''}`;
+  const prevOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  document.body.appendChild(el);
+  const track = $('.lb-track', el);
+  const count = $('.lb-count', el);
+  const w = () => track.clientWidth || 1;
+  let cur = start;
+  const show = () => { if (count) count.textContent = `${num(cur + 1)} / ${num(n)}`; };
+  const go = (i, smooth = true) => { cur = (i + n) % n; track.scrollTo({ left: cur * w(), behavior: smooth ? 'smooth' : 'auto' }); show(); };
+  track.addEventListener('scroll', () => { cur = Math.min(n - 1, Math.max(0, Math.round(track.scrollLeft / w()))); show(); }, { passive: true });
+  requestAnimationFrame(() => go(start, false));
+  const close = () => { el.remove(); document.body.style.overflow = prevOverflow; document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); if (e.key === 'ArrowRight') go(cur + 1); if (e.key === 'ArrowLeft') go(cur - 1); };
+  document.addEventListener('keydown', onKey);
+  $('.lb-x', el).addEventListener('click', close);
+  $('.lb-prev', el)?.addEventListener('click', () => go(cur - 1));
+  $('.lb-next', el)?.addEventListener('click', () => go(cur + 1));
+  el.addEventListener('click', (e) => { if (e.target.classList.contains('lb-slide')) close(); });
+  $('.lb-x', el).focus({ preventScroll: true });
 }
 function galleryHtml(pics, alt) {
   return slidesHtml(pics, alt, 'sheet-img', `<button class="x-btn" type="button" data-close aria-label="إغلاق">${x()}</button>`) + thumbsHtml(pics);

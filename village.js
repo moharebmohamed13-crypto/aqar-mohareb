@@ -1,4 +1,4 @@
-import { sb, img, esc, money, icon, qs, mountChrome, waLink, chaletCard, showError, lightbox, carousel } from './lib.js?v=12';
+import { sb, img, esc, money, icon, qs, mountChrome, waLink, chaletCard, showError, lightbox, carousel } from './lib.js?v=13';
 
 const settings = await mountChrome('villages');
 const page = document.getElementById('page');

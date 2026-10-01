@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=12';
-import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE } from './ui.js?v=12';
+import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=13';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE } from './ui.js?v=13';
 
 const p = params();
 const page = $('#page');
@@ -51,9 +51,9 @@ if (!c) {
         <div class="spec-grid am-list">${specs.map(([ic, val, l]) => `<div class="spec">${icon(ic)}<b>${esc(val)}</b><small>${l}</small></div>`).join('')}</div>
         ${rent ? `<div class="rent-info am-up">
           <h2 class="h3">قبل ما تحجز</h2>
-          ${c.security_deposit ? `<div class="ri">${icon('security')}<div><b>تأمين مسترد ${money(c.security_deposit)}</b><small>بيتدفع عند الاستلام ويرجعلك بالكامل عند تسليم الشاليه لو مفيش أي تلف.</small></div></div>` : ''}
-          ${c.housekeeping_fee ? `<div class="ri">${icon('sofa')}<div><b>هاوس كيبنج ${money(c.housekeeping_fee)}</b><small>رسوم نظافة وتجهيز، بتتدفع مرة واحدة للحجز ومتضافة على الإجمالي.</small></div></div>` : ''}
-          ${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `<div class="ri">${icon('tag')}<div><b>ليلة الخميس والجمعة ${money(c.weekend_price)}</b><small>باقي أيام الأسبوع ${money(c.price_night)} لليلة.</small></div></div>` : ''}
+          <div class="ri">${icon('security')}<div><b>تأمين مسترد${c.security_deposit ? ` ${money(c.security_deposit)}` : ''}</b><small>بيتدفع عند الاستلام${c.security_deposit ? '' : ' (قيمته بتتأكد مع الحجز)'}، ويرجعلك بالكامل عند تسليم الشاليه لو مفيش أي تلف.</small></div></div>
+          <div class="ri">${icon('sofa')}<div><b>هاوس كيبنج${c.housekeeping_fee ? ` ${money(c.housekeeping_fee)}` : ''}</b><small>رسوم نظافة وتجهيز بتتدفع مرة واحدة للحجز${c.housekeeping_fee ? ' ومتضافة على الإجمالي' : ' (قيمتها بتتأكد مع الحجز)'}.</small></div></div>
+          <div class="ri">${icon('tag')}<div><b>${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `ليلة الخميس والجمعة ${money(c.weekend_price)}` : 'سعر الخميس والجمعة أعلى'}</b><small>${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `باقي أيام الأسبوع ${money(c.price_night)} لليلة.` : 'ليلة الخميس والجمعة سعرها أعلى من باقي أيام الأسبوع.'}</small></div></div>
           <div class="ri">${icon('star')}<div><b>الأسعار في المواسم</b><small>السعر اليومي ممكن يختلف في الأعياد والمناسبات.</small></div></div>
         </div>` : ''}
         ${feats.length ? `<div class="block"><h2 class="h3">مميزات الشاليه</h2><div class="feat-grid am-list">${feats.map((f) => `<div class="feat" style="background:#fff;border:1px solid var(--line)">${icon(f.icon)}${esc(f.name)}</div>`).join('')}</div></div>` : ''}
