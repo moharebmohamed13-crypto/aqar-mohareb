@@ -1,5 +1,5 @@
 import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js';
-import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x } from './ui.js';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider } from './ui.js';
 
 const p = params();
 const page = $('#page');
@@ -21,7 +21,6 @@ if (!c) {
   const pics = [c.cover_image, ...(c.gallery || [])].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i);
   const feats = (c.chalet_features || []).map((x) => x.features).filter(Boolean).sort((a, b) => a.sort_order - b.sort_order);
   let stay = rent && p.from && p.to && nightsBetween(p.from, p.to) > 0 ? { from: p.from, to: p.to, guests: Number(p.g) || 2 } : null;
-  let cur = 0;
   document.title = `${c.title} – ${v.name || ''} | عقار محارب`;
 
   const specs = [
@@ -38,11 +37,8 @@ if (!c) {
     page.innerHTML = `
     <div class="wrap c-layout">
       <div>
-        <div class="gal" style="margin-inline:-16px">
-          <img class="am-zoom" id="main" src="${esc(img(pics[cur] || ''))}" alt="${esc(c.title)}">
-          ${pics.length > 1 ? `<span class="count-pill" id="cnt">${num(cur + 1)} / ${num(pics.length)}</span>` : ''}
-        </div>
-        ${pics.length > 1 ? `<div class="thumbs" style="padding-inline:0">${pics.map((q, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === cur}"><img src="${esc(img(q))}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}
+        ${slidesHtml(pics, c.title, 'gal')}
+        ${pics.length > 1 ? `<div class="thumbs" style="padding-inline:0">${pics.map((q, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === 0}"><img src="${esc(img(q))}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}
         <div class="c-head am-up">
           <div style="display:flex;gap:6px;align-items:center">${statusBadge(c.status)}<span class="tag code" style="padding:2px 9px">${esc(c.code)}</span></div>
           <h1>${esc(c.title)}</h1>
@@ -76,6 +72,7 @@ if (!c) {
         </div></div>
       </div>
     </div>`;
+    wireSlider(page);
   }
 
   const openCal = () => calendarSheet(c, {
@@ -135,15 +132,6 @@ if (!c) {
   }
 
   page.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-i]');
-    if (t) {
-      cur = Number(t.dataset.i);
-      const m = $('#main');
-      m.classList.remove('am-zoom'); m.style.transition = 'opacity .25s ease'; m.style.opacity = '0';
-      setTimeout(() => { m.src = img(pics[cur]); m.style.opacity = '1'; }, 150);
-      const cnt = $('#cnt'); if (cnt) cnt.textContent = `${num(cur + 1)} / ${num(pics.length)}`;
-      $$('.thumbs button', page).forEach((b) => b.setAttribute('aria-current', b === t));
-    }
     if (e.target.closest('[data-cal]')) openCal();
     if (e.target.closest('[data-req]')) openRequest();
   });

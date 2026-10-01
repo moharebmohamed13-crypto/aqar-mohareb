@@ -91,24 +91,65 @@ export function sheet(html, { label = '', onClose } = {}) {
   return { el: scrim.firstElementChild, close };
 }
 
+// ---------- معرض صور يتحرك لوحده ويتسحب يمين وشمال ----------
+export function slidesHtml(pics, alt, cls = 'sheet-img', extra = '') {
+  return `<div class="${cls} slider" data-slider>
+    <div class="slides">${pics.map((p, i) => `<img src="${esc(img(p))}" alt="${i === 0 ? esc(alt) : ''}" ${i ? 'loading="lazy"' : ''} draggable="false">`).join('') || '<img alt="">'}</div>
+    ${extra}
+    ${pics.length > 1 ? `<span class="count-pill" data-count>${num(1)} / ${num(pics.length)}</span>
+      <div class="sdots">${pics.map((_, i) => `<i${i === 0 ? ' class="on"' : ''}></i>`).join('')}</div>` : ''}
+  </div>`;
+}
+function thumbsHtml(pics) {
+  return pics.length > 1 ? `<div class="thumbs">${pics.map((p, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === 0}"><img src="${esc(img(p))}" alt="" loading="lazy"></button>`).join('')}</div>` : '';
+}
+export function wireSlider(root, { interval = 3500 } = {}) {
+  const box = $('[data-slider]', root);
+  if (!box) return;
+  const track = $('.slides', box);
+  const n = track.children.length;
+  const count = $('[data-count]', box);
+  const dots = $$('.sdots i', box);
+  const thumbs = $$('.thumbs button', root);
+  let cur = 0; let hold = 0; let t;
+  const w = () => track.clientWidth || 1;
+  const mark = (i) => {
+    if (i === cur) return;
+    cur = i;
+    if (count) count.textContent = `${num(i + 1)} / ${num(n)}`;
+    dots.forEach((d, j) => d.classList.toggle('on', j === i));
+    thumbs.forEach((b, j) => b.setAttribute('aria-current', j === i));
+  };
+  const go = (i, smooth = true) => { track.scrollTo({ left: ((i + n) % n) * w(), behavior: smooth ? 'smooth' : 'auto' }); };
+  track.addEventListener('scroll', () => mark(Math.min(n - 1, Math.max(0, Math.round(track.scrollLeft / w())))), { passive: true });
+  thumbs.forEach((b) => b.addEventListener('click', () => { go(Number(b.dataset.i)); pause(); }));
+  const pause = () => { hold = Date.now() + 6000; };
+  ['pointerdown', 'touchstart', 'wheel'].forEach((ev) => track.addEventListener(ev, pause, { passive: true }));
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    box.addEventListener('mouseenter', () => { hold = Infinity; });
+    box.addEventListener('mouseleave', () => { hold = Date.now() + 1500; });
+  }
+  // سحب بالماوس على الكمبيوتر
+  let dragX = null; let startLeft = 0; let startIdx = 0;
+  track.addEventListener('mousedown', (e) => { dragX = e.clientX; startLeft = track.scrollLeft; startIdx = cur; track.classList.add('drag'); e.preventDefault(); });
+  window.addEventListener('mousemove', (e) => { if (dragX !== null) track.scrollLeft = startLeft - (e.clientX - dragX); });
+  window.addEventListener('mouseup', (e) => {
+    if (dragX === null) return;
+    const d = e.clientX - dragX; dragX = null; track.classList.remove('drag');
+    go(Math.abs(d) > 40 ? Math.min(n - 1, Math.max(0, startIdx + (d < 0 ? 1 : -1))) : startIdx);
+  });
+  if (n < 2) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  t = setInterval(() => {
+    if (!box.isConnected) return clearInterval(t);
+    if (document.hidden || Date.now() < hold || dragX !== null) return;
+    go(cur + 1, !reduce);
+  }, interval);
+}
 function galleryHtml(pics, alt) {
-  return `<div class="sheet-img"><img data-main src="${esc(img(pics[0] || ''))}" alt="${esc(alt)}">
-    <button class="x-btn" type="button" data-close aria-label="إغلاق">${x()}</button>
-    ${pics.length > 1 ? `<span class="count-pill" data-count>١ / ${num(pics.length)}</span>` : ''}</div>
-    ${pics.length > 1 ? `<div class="thumbs">${pics.map((p, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === 0}"><img src="${esc(img(p))}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}`;
+  return slidesHtml(pics, alt, 'sheet-img', `<button class="x-btn" type="button" data-close aria-label="إغلاق">${x()}</button>`) + thumbsHtml(pics);
 }
-function wireGallery(root, pics) {
-  const main = $('[data-main]', root);
-  const count = $('[data-count]', root);
-  $$('.thumbs button', root).forEach((b) => b.addEventListener('click', () => {
-    const i = Number(b.dataset.i);
-    main.style.opacity = '0';
-    setTimeout(() => { main.src = img(pics[i]); main.style.opacity = '1'; }, 150);
-    main.style.transition = 'opacity .25s ease';
-    if (count) count.textContent = `${num(i + 1)} / ${num(pics.length)}`;
-    $$('.thumbs button', root).forEach((x) => x.setAttribute('aria-current', x === b));
-  }));
-}
+const wireGallery = (root) => wireSlider(root);
 const uniq = (a) => a.filter(Boolean).filter((x, i, arr) => arr.indexOf(x) === i);
 
 // معاينة القرية
