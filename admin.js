@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER } from './lib.js?v=10';
+import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER } from './lib.js?v=11';
 
 const app = document.getElementById('app');
 let session = null;
@@ -304,9 +304,15 @@ async function chaletForm(id) {
           </div>
         </section>
         <section class="box"><h2>السعر</h2>
-          <div class="g2" data-for="rent">
-            <label class="field">سعر الليلة (ج.م)<input type="number" min="0" name="price_night" value="${v('price_night')}"></label>
-            <label class="field">سعر الأسبوع (ج.م) – اختياري<input type="number" min="0" name="price_week" value="${v('price_week')}"></label>
+          <div data-for="rent">
+            <div class="g2">
+              <label class="field">سعر الليلة – أيام الأسبوع (ج.م)<input type="number" min="0" name="price_night" value="${v('price_night')}"></label>
+              <label class="field">سعر ليلة الخميس والجمعة (ج.م)<input type="number" min="0" name="weekend_price" value="${v('weekend_price')}" placeholder="لو فاضي = نفس السعر العادي"></label>
+              <label class="field">هاوس كيبنج (ج.م) – مرة واحدة للحجز<input type="number" min="0" name="housekeeping_fee" value="${v('housekeeping_fee')}" placeholder="اختياري"></label>
+              <label class="field">التأمين المسترد (ج.م)<input type="number" min="0" name="security_deposit" value="${v('security_deposit')}" placeholder="اختياري"></label>
+              <label class="field">سعر الأسبوع (ج.م) – اختياري<input type="number" min="0" name="price_week" value="${v('price_week')}"></label>
+            </div>
+            <p class="hint" style="margin:8px 0 0">ليلة الخميس والجمعة بتتحسب تلقائي بالسعر بتاعها. الهاوس كيبنج بيتضاف على إجمالي الحجز، والتأمين بيظهر للعميل إنه مسترد لو مفيش تلف.</p>
           </div>
           <div class="g3" data-for="sale">
             <label class="field">السعر الإجمالي (ج.م)<input type="number" min="0" name="price_total" value="${v('price_total')}"></label>
@@ -358,6 +364,9 @@ async function chaletForm(id) {
       max_guests: nOrNull(fd.get('max_guests')),
       price_night: rent ? nOrNull(fd.get('price_night')) : null,
       price_week: rent ? nOrNull(fd.get('price_week')) : null,
+      weekend_price: rent ? nOrNull(fd.get('weekend_price')) : null,
+      housekeeping_fee: rent ? nOrNull(fd.get('housekeeping_fee')) : null,
+      security_deposit: rent ? nOrNull(fd.get('security_deposit')) : null,
       price_total: rent ? null : nOrNull(fd.get('price_total')),
       down_payment: rent ? null : nOrNull(fd.get('down_payment')),
       installment_period: rent ? null : sOrNull(fd.get('installment_period')),
@@ -608,7 +617,8 @@ async function requestsView() {
             <div><span>النوع</span><b>${r.kind === 'rent' ? 'حجز إيجار' : 'طلب معاينة (بيع)'}</b></div>
             ${r.kind === 'rent' ? `<div><span>التواريخ</span><b>${dstr(r.check_in)} ← ${dstr(r.check_out)} · ${num(n)} ليالي</b></div>
             <div><span>الأفراد</span><b>${num(r.guests || 0)}</b></div>
-            <div><span>الإجمالي</span><b>${money(r.total)}</b></div>` : ''}
+            <div><span>الإجمالي${r.housekeeping ? ' (شامل هاوس كيبنج)' : ''}</span><b>${money(r.total)}</b></div>
+            ${r.deposit ? `<div><span>تأمين مسترد</span><b>${money(r.deposit)}</b></div>` : ''}` : ''}
             ${r.notes ? `<div><span>ملاحظات</span><b style="font-weight:400">${esc(r.notes)}</b></div>` : ''}
           </div>
           ${r.status === 'pending' ? `<div style="display:flex;gap:8px"><button class="btn btn-dark" style="flex:1;background:#2F5A3A" type="button" data-acc>${r.kind === 'rent' ? 'قبول وقفل الأيام' : 'قبول'}</button><button class="btn btn-outline" type="button" data-rej>رفض</button></div>`

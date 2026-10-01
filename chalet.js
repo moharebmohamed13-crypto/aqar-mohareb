@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=10';
-import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider } from './ui.js?v=10';
+import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=11';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE } from './ui.js?v=11';
 
 const p = params();
 const page = $('#page');
@@ -34,6 +34,7 @@ if (!c) {
 
   function render() {
     const n = stay ? nightsBetween(stay.from, stay.to) : 0;
+    const pr = rent ? stayPrice(c, stay?.from, stay?.to) : null;
     page.innerHTML = `
     <div class="wrap c-layout">
       <div>
@@ -45,7 +46,7 @@ if (!c) {
           <a href="village.html?v=${encodeURIComponent(v.slug || v.id)}" style="display:flex;gap:6px;align-items:center;font-size:14px">${icon('pin')} قرية ${esc(v.name || '')}</a>
         </div>
         ${rent && can ? `<div class="stay am-up am-d1"><span class="ic">${calIcon()}</span>
-          <span>${stay ? `<b>${fmtRange(stay.from, stay.to)} · ${num(n)} ليالي</b><small>${num(stay.guests)} أفراد · الإجمالي ${money(n * (c.price_night || 0))}</small>` : `<b>اختار تواريخ الإقامة</b><small>شوف الأيام المتاحة في التقويم</small>`}</span>
+          <span>${stay ? `<b>${fmtRange(stay.from, stay.to)} · ${num(n)} ليالي</b><small>${num(stay.guests)} أفراد · الإجمالي ${money(pr.total)}</small>` : `<b>اختار تواريخ الإقامة</b><small>شوف الأيام المتاحة في التقويم</small>`}</span>
           <button class="btn btn-sm" type="button" data-cal style="background:transparent;border-color:#5A554B;color:var(--gold)">${stay ? 'تغيير' : 'التقويم'}</button></div>` : ''}
         <div class="spec-grid am-list">${specs.map(([ic, val, l]) => `<div class="spec">${icon(ic)}<b>${esc(val)}</b><small>${l}</small></div>`).join('')}</div>
         ${feats.length ? `<div class="block"><h2 class="h3">مميزات الشاليه</h2><div class="feat-grid am-list">${feats.map((f) => `<div class="feat" style="background:#fff;border:1px solid var(--line)">${icon(f.icon)}${esc(f.name)}</div>`).join('')}</div></div>` : ''}
@@ -55,18 +56,16 @@ if (!c) {
         <div class="block" style="margin-top:22px">
           <h2 class="h3">${rent ? 'تفاصيل السعر' : 'السعر'}</h2>
           <div class="rows">
-            ${rent ? `
-              <div><span>سعر الليلة</span><b>${money(c.price_night)}</b></div>
-              ${c.price_week ? `<div><span>سعر الأسبوع</span><b>${money(c.price_week)}</b></div>` : ''}
-              ${n ? `<div><span>${money(c.price_night)} × ${num(n)} ليالي</span><b>${money(n * (c.price_night || 0))}</b></div><div class="tot"><span>الإجمالي</span><b>${money(n * (c.price_night || 0))}</b></div>` : ''}`
+            ${rent ? `${priceRowsHtml(c, pr)}${c.price_week && !n ? `<div><span>سعر الأسبوع</span><b>${money(c.price_week)}</b></div>` : ''}`
             : `
               <div class="tot"><span>السعر الإجمالي</span><b>${money(c.price_total)}</b></div>
               ${c.down_payment ? `<div><span>المقدم</span><b>${money(c.down_payment)}</b></div>` : ''}
               ${c.installment_period ? `<div><span>مدة التقسيط</span><b>${esc(c.installment_period)}</b></div>` : ''}`}
           </div>
+          ${rent && (!n || pr.wkN) ? `<p class="price-note-box">${SEASON_NOTE}</p>` : ''}
         </div>
         <div class="dock"><div class="wrap">
-          <div class="p">${rent ? `<b>${n ? money(n * (c.price_night || 0)) : money(c.price_night)}</b><small>${n ? `${num(n)} ليالي` : '/ الليلة'}</small>` : `<b>${money(c.price_total)}</b><small>${c.down_payment ? `مقدم ${money(c.down_payment)}` : 'السعر الإجمالي'}</small>`}</div>
+          <div class="p">${rent ? `<b>${n ? money(pr.total) : money(c.price_night)}</b><small>${n ? `${num(n)} ليالي${pr.deposit ? ` + تأمين ${money(pr.deposit)}` : ''}` : '/ الليلة'}</small>` : `<b>${money(c.price_total)}</b><small>${c.down_payment ? `مقدم ${money(c.down_payment)}` : 'السعر الإجمالي'}</small>`}</div>
           ${can ? `<button class="btn btn-dark am-cta" type="button" data-req>${rent ? 'اطلب الحجز' : 'اطلب معاينة'}</button>` : `<span class="badge b-off" style="padding:8px 12px">${c.status === 'sold' ? 'تم البيع' : 'غير متاح حاليًا'}</span>`}
           <a class="btn btn-soft" href="${waLink(s, waMessage(s, c, v) + (stay ? `\nمن ${stay.from} لـ ${stay.to} · ${stay.guests} أفراد` : ''))}" target="_blank" rel="noopener" aria-label="تواصل عبر واتساب">${icon('whatsapp')}</a>
         </div></div>
@@ -87,11 +86,13 @@ if (!c) {
   function openRequest() {
     if (rent && !stay) return openCal();
     const n = stay ? nightsBetween(stay.from, stay.to) : 0;
+    const pr = stay ? stayPrice(c, stay.from, stay.to) : null;
     const sh = sheet(`<div class="sheet-handle"></div>
       <div class="sheet-top"><h2>${rent ? 'طلب الحجز' : 'طلب معاينة'}</h2><button class="x-btn" type="button" data-close aria-label="إغلاق" style="background:var(--chip)">${x()}</button></div>
       <form class="sheet-pad" id="rq" style="display:flex;flex-direction:column;gap:12px" novalidate>
         <div class="sum"><img src="${esc(img(c.cover_image))}" alt=""><div><b>${esc(c.title)}</b><span>${esc(v.name || '')} · ${esc(c.code)}</span>
-          ${stay ? `<span style="color:var(--ink)">${fmtRange(stay.from, stay.to)} · ${num(n)} ليالي · ${num(stay.guests)} أفراد</span><b>${money(n * (c.price_night || 0))}</b>` : `<b>${money(c.price_total)}</b>`}</div></div>
+          ${stay ? `<span style="color:var(--ink)">${fmtRange(stay.from, stay.to)} · ${num(n)} ليالي · ${num(stay.guests)} أفراد</span><b>${money(pr.total)}${pr.hk ? ' <small style="font-weight:400;color:var(--muted)">شامل هاوس كيبنج</small>' : ''}</b>` : `<b>${money(c.price_total)}</b>`}</div></div>
+        ${pr && (pr.deposit || pr.wkN) ? `<div class="price-note-box" style="margin:0">${pr.deposit ? `<b>تأمين مسترد ${money(pr.deposit)}</b> — ${DEPOSIT_NOTE}` : ''}${pr.deposit && pr.wkN ? '<br>' : ''}${pr.wkN ? SEASON_NOTE : ''}</div>` : ''}
         <label class="field">الاسم<input name="name" autocomplete="name" required minlength="2" maxlength="80" placeholder="اسمك بالكامل"></label>
         <label class="field">رقم الموبايل<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required dir="ltr" style="text-align:right" placeholder="01xxxxxxxxx"></label>
         <label class="field">ملاحظات (اختياري)<textarea name="notes" rows="2" maxlength="500" placeholder="${rent ? 'أي طلب خاص؟' : 'أنسب معاد للمعاينة؟'}"></textarea></label>

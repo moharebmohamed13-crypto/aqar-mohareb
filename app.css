@@ -375,3 +375,14 @@ button:active, a:active { transform: scale(.97); }
 .sdots { position: absolute; z-index: 2; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; direction: ltr; pointer-events: none; }
 .sdots i { width: 6px; height: 6px; border-radius: 99px; background: rgba(255,255,255,.55); transition: width .3s ease, background-color .3s ease; }
 .sdots i.on { width: 18px; background: #fff; }
+
+/* تفاصيل السعر: تأمين + ملاحظات */
+.rows .dep { align-items: flex-start; gap: 12px; background: #FBF8F1; }
+.rows .dep span { display: flex; flex-direction: column; gap: 2px; }
+.rows .dep small { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.price-note-box { margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: #FBF8F1; border: 1px solid #EFE6D3; color: #6B5A35; font-size: 12.5px; line-height: 1.7; }
+.price-note-box[hidden] { display: none; }
+.cal .d.wk:not(.booked):not(.past):not(.edge):not(.in)::after { content: ''; position: absolute; bottom: 4px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--gold); }
+.cal .d { position: relative; }
+.wk-dot { display: inline-block; width: 6px !important; height: 6px !important; border-radius: 50%; background: var(--gold); }
+.rows b { white-space: nowrap; }

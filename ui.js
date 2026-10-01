@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=10';
+import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=11';
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -22,6 +22,35 @@ export const UNITS = [
   { rooms: 4, n: '٤', name: '٤ غرف أو أكتر', guests: 'من ٨ لـ ١٠ أفراد' },
 ];
 export const unitName = (r) => (UNITS.find((u) => u.rooms === Number(r)) || {}).name || '';
+
+// ---------- حساب سعر الإقامة (الخميس والجمعة بسعر الويك إند + هاوس كيبنج) ----------
+export const isWeekendNight = (d) => d.getDay() === 4 || d.getDay() === 5;
+export function stayPrice(c, from, to) {
+  const base = Number(c.price_night) || 0;
+  const wk = c.weekend_price != null && c.weekend_price !== '' ? Number(c.weekend_price) : base;
+  let nights = 0; let wkN = 0; let rent = 0;
+  if (from && to) for (let d = parse(from); d < parse(to); d = addDays(d, 1)) { nights++; if (isWeekendNight(d)) { wkN++; rent += wk; } else rent += base; }
+  const hk = nights ? Number(c.housekeeping_fee) || 0 : 0;
+  return { nights, wkN, normN: nights - wkN, base, wk, rent, hk, total: rent + hk, deposit: Number(c.security_deposit) || 0 };
+}
+export const DEPOSIT_NOTE = 'تأمين مسترد بالكامل عند تسليم الشاليه لو مفيش أي تلف.';
+export const SEASON_NOTE = 'سعر ليلة الخميس والجمعة أعلى من باقي الأيام، والسعر اليومي ممكن يختلف في الأعياد والمناسبات.';
+// صفوف تفاصيل السعر
+export function priceRowsHtml(c, p) {
+  const r = [];
+  if (p.nights) {
+    if (p.normN) r.push(`<div><span>${money(p.base)} × ${num(p.normN)} ${p.normN === 1 ? 'ليلة' : 'ليالي'}${p.wkN ? ' (أيام عادية)' : ''}</span><b>${money(p.base * p.normN)}</b></div>`);
+    if (p.wkN) r.push(`<div><span>${money(p.wk)} × ${num(p.wkN)} ${p.wkN === 1 ? 'ليلة' : 'ليالي'} (خميس/جمعة)</span><b>${money(p.wk * p.wkN)}</b></div>`);
+    if (p.hk) r.push(`<div><span>هاوس كيبنج</span><b>${money(p.hk)}</b></div>`);
+    r.push(`<div class="tot"><span>الإجمالي</span><b>${money(p.total)}</b></div>`);
+  } else {
+    r.push(`<div><span>سعر الليلة (أيام الأسبوع)</span><b>${money(p.base)}</b></div>`);
+    if (p.wk !== p.base) r.push(`<div><span>ليلة الخميس والجمعة</span><b>${money(p.wk)}</b></div>`);
+    if (c.housekeeping_fee) r.push(`<div><span>هاوس كيبنج (مرة واحدة للحجز)</span><b>${money(c.housekeeping_fee)}</b></div>`);
+  }
+  if (p.deposit) r.push(`<div class="dep"><span>تأمين مسترد<small>${DEPOSIT_NOTE}</small></span><b>${money(p.deposit)}</b></div>`);
+  return r.join('');
+}
 
 // ---------- الهيدر ----------
 export async function bar({ back, close, title, float } = {}) {
@@ -224,12 +253,13 @@ export async function calendarSheet(c, { from, to, guests = 2, onDone, villageNa
   view.setDate(1);
 
   const s = sheet(`<div class="sheet-handle"></div>
-    <div class="sheet-top"><div><h2>اختار تواريخ الإقامة</h2><div class="sub">شاليه ${esc(c.code)}${villageName ? ` · ${esc(villageName)}` : ''} · ${money(c.price_night)} / الليلة</div></div>
+    <div class="sheet-top"><div><h2>اختار تواريخ الإقامة</h2><div class="sub">شاليه ${esc(c.code)}${villageName ? ` · ${esc(villageName)}` : ''} · ${money(c.price_night)} / الليلة${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? ` · الخميس والجمعة ${money(c.weekend_price)}` : ''}</div></div>
       <button class="x-btn" type="button" data-close aria-label="إغلاق" style="background:var(--chip)">${x()}</button></div>
     <div class="cal-nav"><button type="button" data-prev aria-label="الشهر اللي فات"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button><b data-month></b><button type="button" data-next aria-label="الشهر الجاي"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button></div>
     <div class="cal" data-grid></div>
-    <div class="legend"><span><i style="background:var(--chip);border:1px solid var(--line)"></i>محجوز</span><span><i style="background:var(--ink);border-radius:50%"></i>اختيارك</span><span><i style="border:1px solid var(--line-2)"></i>متاح</span></div>
+    <div class="legend"><span><i style="background:var(--chip);border:1px solid var(--line)"></i>محجوز</span><span><i style="background:var(--ink);border-radius:50%"></i>اختيارك</span><span><i style="border:1px solid var(--line-2)"></i>متاح</span><span><i class="wk-dot"></i>خميس/جمعة</span></div>
     <div class="cal-msg" data-msg aria-live="polite"></div>
+    <p class="price-note-box" data-pnote hidden></p>
     <div class="stepper"><span><b style="font-size:14px">عدد الأفراد</b><br><small class="sub">أقصى عدد ${num(maxG)}</small></span>
       <div><button type="button" data-plus aria-label="زيادة">+</button><b data-g></b><button type="button" data-minus aria-label="تقليل">−</button></div></div>
     <div class="sheet-actions" style="margin-top:14px;align-items:center">
@@ -255,7 +285,7 @@ export async function calendarSheet(c, { from, to, guests = 2, onDone, villageNa
       const isB = booked.has(k);
       const edge = k === st.from || k === st.to;
       const inR = st.from && st.to && k > st.from && k < st.to;
-      const cls = ['d', past && 'past', isB && 'booked', edge && 'edge', edge && !st.to && 'only', inR && 'in'].filter(Boolean).join(' ');
+      const cls = ['d', isWeekendNight(date) && 'wk', past && 'past', isB && 'booked', edge && 'edge', edge && !st.to && 'only', inR && 'in'].filter(Boolean).join(' ');
       h += `<button type="button" class="${cls}" data-day="${k}" ${past || isB ? 'disabled' : ''} aria-label="${fmtDay(k)}${isB ? ' – محجوز' : ''}" ${edge ? 'aria-pressed="true"' : ''}>${edge ? `<span>${num(d)}</span>` : num(d)}</button>`;
     }
     grid.innerHTML = h;
@@ -265,8 +295,14 @@ export async function calendarSheet(c, { from, to, guests = 2, onDone, villageNa
     $('[data-minus]', s.el).disabled = st.guests <= 1;
     $('[data-plus]', s.el).disabled = st.guests >= maxG;
     const n = st.from && st.to ? nightsBetween(st.from, st.to) : 0;
-    $('[data-total]', s.el).textContent = n ? money(n * (c.price_night || 0)) : (st.from ? 'اختار يوم المغادرة' : 'اختار يوم الوصول');
-    $('[data-sum]', s.el).textContent = n ? `${fmtRange(st.from, st.to)} · ${num(n)} ليالي` : (st.from ? `الوصول ${fmtDay(st.from)}` : '');
+    const pr = n ? stayPrice(c, st.from, st.to) : null;
+    $('[data-total]', s.el).textContent = n ? money(pr.total) : (st.from ? 'اختار يوم المغادرة' : 'اختار يوم الوصول');
+    $('[data-sum]', s.el).textContent = n ? `${fmtRange(st.from, st.to)} · ${num(n)} ليالي${pr.hk ? ' · شامل هاوس كيبنج' : ''}` : (st.from ? `الوصول ${fmtDay(st.from)}` : '');
+    const note = $('[data-pnote]', s.el);
+    const parts = [];
+    if (pr && pr.wkN) parts.push(SEASON_NOTE);
+    if (pr && pr.deposit) parts.push(`+ ${money(pr.deposit)} تأمين مسترد عند الاستلام.`);
+    note.textContent = parts.join(' '); note.hidden = !parts.length;
     $('[data-go]', s.el).disabled = !n;
   }
   grid.addEventListener('click', (e) => {
