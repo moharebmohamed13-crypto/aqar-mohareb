@@ -1,0 +1,37 @@
+name: Supabase keep-alive
+
+# يكلّم قاعدة البيانات كل يومين علشان سوبابيز ما يوقفش المشروع بسبب قلة النشاط
+on:
+  schedule:
+    - cron: '17 6 */2 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          URL: https://opsidojhkffasrescocy.supabase.co
+          KEY: sb_publishable_0INFRpOSwK8JWcxdGTo34Q_wvKQt10l
+        run: |
+          code=$(curl -s -o /tmp/out.json -w '%{http_code}' "$URL/rest/v1/villages?select=id&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          echo "HTTP $code"; cat /tmp/out.json; echo
+          test "$code" = "200"
+
+      # جيت هب بيوقف الجدولة لو الريبو ما اتغيرش ٦٠ يوم، فبنعمل تعديل صغير أول كل شهر
+      - name: Keep the schedule alive (monthly)
+        if: github.event_name == 'schedule'
+        run: |
+          if [ "$(date -u +%d)" -le 02 ]; then
+            git clone --depth 1 "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" repo
+            cd repo
+            date -u > .github/last-ping.txt
+            git config user.name "keepalive-bot"
+            git config user.email "keepalive-bot@users.noreply.github.com"
+            git add .github/last-ping.txt
+            git commit -m "keep-alive $(date -u +%F)" && git push
+          fi
