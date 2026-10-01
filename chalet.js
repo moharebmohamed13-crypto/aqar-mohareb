@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=11';
-import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE } from './ui.js?v=11';
+import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=12';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE } from './ui.js?v=12';
 
 const p = params();
 const page = $('#page');
@@ -49,6 +49,13 @@ if (!c) {
           <span>${stay ? `<b>${fmtRange(stay.from, stay.to)} · ${num(n)} ليالي</b><small>${num(stay.guests)} أفراد · الإجمالي ${money(pr.total)}</small>` : `<b>اختار تواريخ الإقامة</b><small>شوف الأيام المتاحة في التقويم</small>`}</span>
           <button class="btn btn-sm" type="button" data-cal style="background:transparent;border-color:#5A554B;color:var(--gold)">${stay ? 'تغيير' : 'التقويم'}</button></div>` : ''}
         <div class="spec-grid am-list">${specs.map(([ic, val, l]) => `<div class="spec">${icon(ic)}<b>${esc(val)}</b><small>${l}</small></div>`).join('')}</div>
+        ${rent ? `<div class="rent-info am-up">
+          <h2 class="h3">قبل ما تحجز</h2>
+          ${c.security_deposit ? `<div class="ri">${icon('security')}<div><b>تأمين مسترد ${money(c.security_deposit)}</b><small>بيتدفع عند الاستلام ويرجعلك بالكامل عند تسليم الشاليه لو مفيش أي تلف.</small></div></div>` : ''}
+          ${c.housekeeping_fee ? `<div class="ri">${icon('sofa')}<div><b>هاوس كيبنج ${money(c.housekeeping_fee)}</b><small>رسوم نظافة وتجهيز، بتتدفع مرة واحدة للحجز ومتضافة على الإجمالي.</small></div></div>` : ''}
+          ${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `<div class="ri">${icon('tag')}<div><b>ليلة الخميس والجمعة ${money(c.weekend_price)}</b><small>باقي أيام الأسبوع ${money(c.price_night)} لليلة.</small></div></div>` : ''}
+          <div class="ri">${icon('star')}<div><b>الأسعار في المواسم</b><small>السعر اليومي ممكن يختلف في الأعياد والمناسبات.</small></div></div>
+        </div>` : ''}
         ${feats.length ? `<div class="block"><h2 class="h3">مميزات الشاليه</h2><div class="feat-grid am-list">${feats.map((f) => `<div class="feat" style="background:#fff;border:1px solid var(--line)">${icon(f.icon)}${esc(f.name)}</div>`).join('')}</div></div>` : ''}
         ${c.description ? `<div class="block"><h2 class="h3">عن الشاليه</h2><p class="prose">${esc(c.description)}</p></div>` : ''}
       </div>
@@ -62,7 +69,7 @@ if (!c) {
               ${c.down_payment ? `<div><span>المقدم</span><b>${money(c.down_payment)}</b></div>` : ''}
               ${c.installment_period ? `<div><span>مدة التقسيط</span><b>${esc(c.installment_period)}</b></div>` : ''}`}
           </div>
-          ${rent && (!n || pr.wkN) ? `<p class="price-note-box">${SEASON_NOTE}</p>` : ''}
+          ${rent && n && pr.wkN ? `<p class="price-note-box">${SEASON_NOTE}</p>` : ''}
         </div>
         <div class="dock"><div class="wrap">
           <div class="p">${rent ? `<b>${n ? money(pr.total) : money(c.price_night)}</b><small>${n ? `${num(n)} ليالي${pr.deposit ? ` + تأمين ${money(pr.deposit)}` : ''}` : '/ الليلة'}</small>` : `<b>${money(c.price_total)}</b><small>${c.down_payment ? `مقدم ${money(c.down_payment)}` : 'السعر الإجمالي'}</small>`}</div>

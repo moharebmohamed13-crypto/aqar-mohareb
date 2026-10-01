@@ -386,3 +386,10 @@ button:active, a:active { transform: scale(.97); }
 .cal .d { position: relative; }
 .wk-dot { display: inline-block; width: 6px !important; height: 6px !important; border-radius: 50%; background: var(--gold); }
 .rows b { white-space: nowrap; }
+/* ملاحظة الإيجار في تفاصيل الشاليه */
+.rent-info { margin-top: 18px; padding: 16px; border-radius: var(--r); background: #FBF8F1; border: 1px solid #EFE6D3; display: flex; flex-direction: column; gap: 12px; }
+.rent-info .h3 { margin-bottom: 2px; }
+.rent-info .ri { display: flex; gap: 12px; align-items: flex-start; }
+.rent-info .ri > .icon { flex-shrink: 0; width: 36px; height: 36px; padding: 8px; border-radius: 10px; background: #fff; border: 1px solid #EFE6D3; color: var(--gold-dark); box-sizing: border-box; }
+.rent-info .ri b { display: block; font-size: 14px; font-weight: 600; }
+.rent-info .ri small { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.6; margin-top: 2px; }

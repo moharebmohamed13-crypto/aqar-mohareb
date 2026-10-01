@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER } from './lib.js?v=11';
+import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER } from './lib.js?v=12';
 
 const app = document.getElementById('app');
 let session = null;
