@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=16';
-import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE, CHECKIN, CHECKOUT } from './ui.js?v=16';
+import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=17';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE, CHECKIN, CHECKOUT, shareIcon, shareChalet } from './ui.js?v=17';
 
 const p = params();
 const page = $('#page');
@@ -41,7 +41,8 @@ if (!c) {
         ${slidesHtml(pics, c.title, 'gal')}
         ${pics.length > 1 ? `<div class="thumbs" style="padding-inline:0">${pics.map((q, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === 0}"><img src="${esc(img(q))}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}
         <div class="c-head am-up">
-          <div style="display:flex;gap:6px;align-items:center">${statusBadge(c.status)}<span class="tag code" style="padding:2px 9px">${esc(c.code)}</span></div>
+          <div style="display:flex;gap:6px;align-items:center">${statusBadge(c.status)}<span class="tag code" style="padding:2px 9px">${esc(c.code)}</span>
+            <button class="share-btn" type="button" data-share aria-label="مشاركة الشاليه">${shareIcon()}<span>مشاركة</span></button></div>
           <h1>${esc(c.title)}</h1>
           <a href="village.html?v=${encodeURIComponent(v.slug || v.id)}" style="display:flex;gap:6px;align-items:center;font-size:14px">${icon('pin')} قرية ${esc(v.name || '')}</a>
         </div>
@@ -142,6 +143,7 @@ if (!c) {
   }
 
   page.addEventListener('click', (e) => {
+    if (e.target.closest('[data-share]')) shareChalet(c, v.name);
     if (e.target.closest('[data-cal]')) openCal();
     if (e.target.closest('[data-req]')) openRequest();
   });

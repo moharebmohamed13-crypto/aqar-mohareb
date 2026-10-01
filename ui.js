@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=16';
+import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=17';
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -194,6 +194,28 @@ export function wireSlider(root, { interval = 3500 } = {}) {
   }, interval);
 }
 
+// ---------- مشاركة الشاليه ----------
+export const shareIcon = () => '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
+export function chaletUrl(c) { return new URL(`chalet.html?id=${c.id}`, location.href).href; }
+export async function shareChalet(c, villageName) {
+  const url = chaletUrl(c);
+  const title = `${c.title}${villageName ? ` – ${villageName}` : ''} | عقار محارب`;
+  const text = `شوف الشاليه ده: ${c.title}${villageName ? ` في ${villageName}` : ''}`;
+  if (navigator.share) { try { await navigator.share({ title, text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  const s = sheet(`<div class="sheet-handle"></div>
+    <div class="sheet-top"><h2>شارك الشاليه</h2><button class="x-btn" type="button" data-close aria-label="إغلاق" style="background:var(--chip)">${x()}</button></div>
+    <div class="sheet-pad" style="display:flex;flex-direction:column;gap:10px">
+      <div class="share-link" dir="ltr">${esc(url)}</div>
+      <button class="btn btn-dark btn-block" type="button" data-copy>نسخ اللينك</button>
+      <a class="btn btn-soft btn-block" href="https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}" target="_blank" rel="noopener">${icon('whatsapp')} ابعته على واتساب</a>
+      <a class="btn btn-soft btn-block" href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" target="_blank" rel="noopener">فيسبوك</a>
+    </div>`, { label: 'مشاركة الشاليه' });
+  $('[data-copy]', s.el).addEventListener('click', async (e) => {
+    try { await navigator.clipboard.writeText(url); } catch { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    e.currentTarget.textContent = 'اتنسخ ✓';
+  });
+}
+
 // ---------- عرض الصورة بمقاسها الكامل ----------
 export function lightbox(srcs, start = 0) {
   const n = srcs.length;
@@ -261,7 +283,7 @@ export function chaletPreview(c, { onDates, detailsHref, villageName } = {}) {
   const isRent = c.offer_type === 'rent';
   const s = sheet(`${galleryHtml(pics, c.title)}
     <div class="sheet-pad">
-      <span class="code">${esc(c.code)}</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="code">${esc(c.code)}</span><button class="share-btn" type="button" data-share aria-label="مشاركة الشاليه">${shareIcon()}<span>مشاركة</span></button></div>
       <h2 style="margin:2px 0 0;font-size:18px;font-weight:600">${esc(c.title)}</h2>
       <div class="sub">${esc(villageName || '')}${c.floor ? ` · ${esc(c.floor)}` : ''}</div>
       <div class="feat-grid" style="margin-top:12px">
@@ -282,6 +304,7 @@ export function chaletPreview(c, { onDates, detailsHref, villageName } = {}) {
   wireGallery(s.el, pics);
   const d = $('[data-dates]', s.el);
   d && d.addEventListener('click', () => { s.close(); onDates(c); });
+  $('[data-share]', s.el).addEventListener('click', () => shareChalet(c, villageName));
   return s;
 }
 

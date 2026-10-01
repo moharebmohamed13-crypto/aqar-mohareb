@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER } from './lib.js?v=16';
+import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER } from './lib.js?v=17';
 
 const app = document.getElementById('app');
 let session = null;
@@ -523,6 +523,8 @@ async function villageForm(id) {
   };
 }
 
+// لو اتلصقت رسالة البوت كلها، ناخد الـ apikey بس
+const cleanKey = (v) => { const t = String(v || '').trim(); if (!t) return null; const m = t.match(/apikey[=:\s]+([A-Za-z0-9]+)/i) || t.match(/(\d{5,})/); return m ? m[1] : t; };
 // ============ إعدادات الموقع ============
 async function settingsView() {
   const main = shell('settings', '<div class="skeleton"></div>');
@@ -590,7 +592,7 @@ async function settingsView() {
     const { error: er } = await sb.from('site_settings').update(row).eq('id', 1);
     let ph = sOrNull(fd.get('wa_phone'));
     if (ph) { ph = ph.replace(/[^\d+]/g, ''); if (ph.startsWith('00')) ph = '+' + ph.slice(2); if (ph.startsWith('0')) ph = '+2' + ph; if (!ph.startsWith('+')) ph = '+' + ph; }
-    const { error: er2 } = await sb.from('admin_notify').upsert({ id: 1, wa_phone: ph, wa_apikey: sOrNull(fd.get('wa_apikey')), enabled: !!fd.get('wa_enabled'), updated_at: new Date().toISOString() });
+    const { error: er2 } = await sb.from('admin_notify').upsert({ id: 1, wa_phone: ph, wa_apikey: cleanKey(fd.get('wa_apikey')), enabled: !!fd.get('wa_enabled'), updated_at: new Date().toISOString() });
     form.classList.remove('busy');
     if (er) return fail(er);
     if (er2) return fail(er2);
