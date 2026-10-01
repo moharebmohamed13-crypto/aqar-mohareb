@@ -1,5 +1,5 @@
-import { sb, img, esc, num } from './lib.js';
-import { $, bar, footer } from './ui.js';
+import { sb, img, esc, num } from './lib.js?v=10';
+import { $, bar, footer } from './ui.js?v=10';
 
 const s = await bar({ float: true });
 footer(s);

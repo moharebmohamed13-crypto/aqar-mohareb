@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js';
+import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=10';
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -120,7 +120,13 @@ export function wireSlider(root, { interval = 3500 } = {}) {
     dots.forEach((d, j) => d.classList.toggle('on', j === i));
     thumbs.forEach((b, j) => b.setAttribute('aria-current', j === i));
   };
-  const go = (i, smooth = true) => { track.scrollTo({ left: ((i + n) % n) * w(), behavior: smooth ? 'smooth' : 'auto' }); };
+  const go = (i, smooth = true) => {
+    const k = (i + n) % n;
+    mark(k);
+    const left = k * w();
+    try { track.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' }); } catch { track.scrollLeft = left; }
+    setTimeout(() => { if (Math.abs(track.scrollLeft - left) > 4 && dragX === null) track.scrollLeft = left; }, 900);
+  };
   track.addEventListener('scroll', () => mark(Math.min(n - 1, Math.max(0, Math.round(track.scrollLeft / w())))), { passive: true });
   thumbs.forEach((b) => b.addEventListener('click', () => { go(Number(b.dataset.i)); pause(); }));
   const pause = () => { hold = Date.now() + 6000; };

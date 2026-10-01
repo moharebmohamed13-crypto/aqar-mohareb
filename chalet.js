@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js';
-import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider } from './ui.js';
+import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=10';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider } from './ui.js?v=10';
 
 const p = params();
 const page = $('#page');
