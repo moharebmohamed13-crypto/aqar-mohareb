@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER } from './lib.js?v=15';
+import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER } from './lib.js?v=16';
 
 const app = document.getElementById('app');
 let session = null;
@@ -528,6 +528,8 @@ async function settingsView() {
   const main = shell('settings', '<div class="skeleton"></div>');
   const { data: s, error } = await sb.from('site_settings').select('*').eq('id', 1).single();
   if (error) return fail(error);
+  const { data: nt } = await sb.from('admin_notify').select('*').eq('id', 1).maybeSingle();
+  const nv = (k) => esc((nt || {})[k] ?? '');
   const val = (k) => esc(s[k] ?? '');
   main.innerHTML = `
   <form id="f">
@@ -559,11 +561,26 @@ async function settingsView() {
           <label class="field">تيك توك<input type="url" name="tiktok" value="${val('tiktok')}" dir="ltr" placeholder="https://tiktok.com/@..."></label>
         </div>
       </section>
+      <section class="box"><h2>إشعار واتساب بالحجوزات الجديدة</h2>
+        <p class="hint" style="margin:0;line-height:1.9">أول ما عميل يبعت طلب حجز من الموقع، هتوصلك رسالة واتساب فيها كل التفاصيل.<br>
+          <b>التفعيل مرة واحدة:</b> ١) سجّل الرقم <b dir="ltr">+34 684 728 023</b> على موبايلك. ٢) ابعتله على واتساب الرسالة دي بالظبط: <b dir="ltr">I allow callmebot to send me messages</b> ٣) هيرد عليك خلال دقيقتين بـ <b>apikey</b> — حطه هنا مع رقمك واضغط حفظ.</p>
+        <div class="g3">
+          <label class="field">رقم الواتساب اللي يوصله الإشعار<input type="tel" name="wa_phone" value="${nv('wa_phone')}" dir="ltr" style="text-align:right" placeholder="+2010xxxxxxxx"></label>
+          <label class="field">الـ apikey<input name="wa_apikey" value="${nv('wa_apikey')}" dir="ltr" style="text-align:right" placeholder="123456" autocomplete="off"></label>
+          <label class="field" style="justify-content:flex-end"><span style="display:flex;align-items:center;gap:8px;min-height:48px"><input type="checkbox" name="wa_enabled" style="width:20px;height:20px;min-height:0;padding:0;accent-color:#8A6D35" ${!nt || nt.enabled ? 'checked' : ''}> الإشعارات شغالة</span></label>
+        </div>
+        <div><button class="btn btn-outline" type="button" id="wa-test">ابعت رسالة تجربة</button></div>
+      </section>
     </div>
   </form>`;
   const heroList = [...new Set([s.hero_image, ...(s.hero_images || [])].filter(Boolean))];
   const imgs = imageManager($('#imgs', main), { images: heroList, folder: 'hero', current: s.hero_image, currentLabel: 'ظاهرة الآن', pickMode: true });
   const form = $('#f', main);
+  $('#wa-test', main).addEventListener('click', async () => {
+    const { error: te } = await sb.rpc('test_admin_wa');
+    if (te) return fail(te);
+    toast('اتبعتت رسالة التجربة — لو ما وصلتش خلال دقيقة اتأكد إنك ضغطت حفظ والرقم والـ apikey صح');
+  });
   form.onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
@@ -571,8 +588,12 @@ async function settingsView() {
     ['hero_title', 'hero_subtitle', 'phone', 'whatsapp', 'address', 'whatsapp_message', 'facebook', 'instagram', 'tiktok'].forEach((k) => { row[k] = sOrNull(fd.get(k)); });
     form.classList.add('busy');
     const { error: er } = await sb.from('site_settings').update(row).eq('id', 1);
+    let ph = sOrNull(fd.get('wa_phone'));
+    if (ph) { ph = ph.replace(/[^\d+]/g, ''); if (ph.startsWith('00')) ph = '+' + ph.slice(2); if (ph.startsWith('0')) ph = '+2' + ph; if (!ph.startsWith('+')) ph = '+' + ph; }
+    const { error: er2 } = await sb.from('admin_notify').upsert({ id: 1, wa_phone: ph, wa_apikey: sOrNull(fd.get('wa_apikey')), enabled: !!fd.get('wa_enabled'), updated_at: new Date().toISOString() });
     form.classList.remove('busy');
     if (er) return fail(er);
+    if (er2) return fail(er2);
     toast('اتحفظت الإعدادات ✓');
   };
 }
