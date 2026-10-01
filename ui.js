@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=13';
+import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=14';
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -33,6 +33,8 @@ export function stayPrice(c, from, to) {
   const hk = nights ? Number(c.housekeeping_fee) || 0 : 0;
   return { nights, wkN, normN: nights - wkN, base, wk, rent, hk, total: rent + hk, deposit: Number(c.security_deposit) || 0 };
 }
+export const CHECKIN = 'الدخول من الساعة ١١ لـ ١٢';
+export const CHECKOUT = 'المغادرة من الساعة ١ لـ ٢';
 export const DEPOSIT_NOTE = 'تأمين مسترد بالكامل عند تسليم الشاليه لو مفيش أي تلف.';
 export const SEASON_NOTE = 'سعر ليلة الخميس والجمعة أعلى من باقي الأيام، والسعر اليومي ممكن يختلف في الأعياد والمناسبات.';
 // صفوف تفاصيل السعر
@@ -298,6 +300,8 @@ export async function calendarSheet(c, { from, to, guests = 2, onDone, villageNa
     <div class="sheet-top"><div><h2>اختار تواريخ الإقامة</h2><div class="sub">شاليه ${esc(c.code)}${villageName ? ` · ${esc(villageName)}` : ''} · ${money(c.price_night)} / الليلة${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? ` · الخميس والجمعة ${money(c.weekend_price)}` : ''}</div></div>
       <button class="x-btn" type="button" data-close aria-label="إغلاق" style="background:var(--chip)">${x()}</button></div>
     <div class="cal-nav"><button type="button" data-prev aria-label="الشهر اللي فات"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button><b data-month></b><button type="button" data-next aria-label="الشهر الجاي"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button></div>
+    <p class="cal-hint" data-hint></p>
+    <p class="cal-times">${CHECKIN} · ${CHECKOUT}</p>
     <div class="cal" data-grid></div>
     <div class="legend"><span><i style="background:var(--chip);border:1px solid var(--line)"></i>محجوز</span><span><i style="background:var(--ink);border-radius:50%"></i>اختيارك</span><span><i style="border:1px solid var(--line-2)"></i>متاح</span><span><i class="wk-dot"></i>خميس/جمعة</span></div>
     <div class="cal-msg" data-msg aria-live="polite"></div>
@@ -346,17 +350,23 @@ export async function calendarSheet(c, { from, to, guests = 2, onDone, villageNa
     if (pr && pr.deposit) parts.push(`+ ${money(pr.deposit)} تأمين مسترد عند الاستلام.`);
     note.textContent = parts.join(' '); note.hidden = !parts.length;
     $('[data-go]', s.el).disabled = !n;
+    $('[data-hint]', s.el).innerHTML = !st.from
+      ? '<b>١</b> اضغط على يوم الوصول'
+      : !st.to ? `الوصول <b>${fmtDay(st.from)}</b> — دلوقتي اضغط على يوم المغادرة، والأيام اللي بينهم هتتحدد لوحدها`
+        : `<span class="nights">${num(n)} ${n === 1 ? 'ليلة' : n === 2 ? 'ليلتين' : 'ليالي'}</span> الوصول <b>${fmtDay(st.from)}</b> · المغادرة <b>${fmtDay(st.to)}</b> <button type="button" class="cal-reset" data-reset>مسح</button>`;
   }
   grid.addEventListener('click', (e) => {
     const b = e.target.closest('[data-day]');
     if (!b || b.disabled) return;
     const k = b.dataset.day;
     msg.textContent = '';
-    if (!st.from || st.to || k <= st.from) { st.from = k; st.to = null; }
-    else if (!free(st.from, k)) { msg.textContent = 'فيه أيام محجوزة في الفترة دي — اختار فترة تانية'; st.from = k; st.to = null; }
+    // اختيار فترة: يوم الوصول وبعدين يوم المغادرة، والأيام اللي بينهم بتتحدد لوحدها
+    if (!st.from || k <= st.from) { st.from = k; st.to = null; }
+    else if (!free(st.from, k)) { msg.textContent = 'فيه أيام محجوزة في الفترة دي — اختار يوم مغادرة أقرب أو فترة تانية'; }
     else st.to = k;
     draw();
   });
+  $('[data-hint]', s.el).addEventListener('click', (e) => { if (e.target.closest('[data-reset]')) { st.from = null; st.to = null; msg.textContent = ''; draw(); } });
   $('[data-prev]', s.el).addEventListener('click', () => { view.setMonth(view.getMonth() - 1); draw(); });
   $('[data-next]', s.el).addEventListener('click', () => { view.setMonth(view.getMonth() + 1); draw(); });
   $('[data-plus]', s.el).addEventListener('click', () => { st.guests = Math.min(maxG, st.guests + 1); draw(); });

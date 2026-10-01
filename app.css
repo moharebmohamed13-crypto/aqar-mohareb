@@ -408,3 +408,8 @@ button:active, a:active { transform: scale(.97); }
 .lb-nav:hover { background: rgba(255,255,255,.28); }
 .lb-prev { left: 18px; } .lb-next { right: 18px; }
 @media (hover: hover) and (pointer: fine) { .lb-nav { display: flex; } }
+.cal-hint { margin: 2px 0 10px; padding: 9px 12px; border-radius: 10px; background: var(--chip, #F1EEE7); font-size: 13px; color: var(--ink); line-height: 1.6; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; }
+.cal-hint b { font-weight: 700; }
+.cal-reset { margin-inline-start: auto; border: 0; background: transparent; color: var(--gold-dark); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; }
+.cal-hint .nights { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 99px; background: var(--ink); color: #fff; font-weight: 700; font-size: 12.5px; }
+.cal-times { margin: -4px 0 10px; font-size: 12px; color: var(--muted); text-align: center; }
