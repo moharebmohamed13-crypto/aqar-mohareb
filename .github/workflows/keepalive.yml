@@ -1,9 +1,9 @@
 name: Supabase keep-alive
 
-# يكلّم قاعدة البيانات كل يومين علشان سوبابيز ما يوقفش المشروع بسبب قلة النشاط
+# يكلّم قاعدة البيانات كل يوم علشان سوبابيز ما يوقفش المشروع بسبب قلة النشاط
 on:
   schedule:
-    - cron: '17 6 */2 * *'
+    - cron: '17 6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,8 @@ jobs:
           URL: https://opsidojhkffasrescocy.supabase.co
           KEY: sb_publishable_0INFRpOSwK8JWcxdGTo34Q_wvKQt10l
         run: |
-          code=$(curl -s -o /tmp/out.json -w '%{http_code}' "$URL/rest/v1/villages?select=id&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          # بيحاول لحد ٦ مرات لو حصلت مشكلة شبكة مؤقتة
+          code=$(curl -s --retry 6 --retry-delay 20 --retry-all-errors --max-time 30 -o /tmp/out.json -w '%{http_code}' "$URL/rest/v1/villages?select=id&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" || echo 000)
           echo "HTTP $code"; cat /tmp/out.json; echo
           test "$code" = "200"
 
@@ -26,7 +27,7 @@ jobs:
       - name: Keep the schedule alive (monthly)
         if: github.event_name == 'schedule'
         run: |
-          if [ "$(date -u +%d)" -le 02 ]; then
+          if [ "$(date -u +%d)" = "01" ]; then
             git clone --depth 1 "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" repo
             cd repo
             date -u > .github/last-ping.txt
