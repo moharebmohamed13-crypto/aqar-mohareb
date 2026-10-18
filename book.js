@@ -1,5 +1,5 @@
-import { sb, img, esc, num, icon } from './lib.js?v=17';
-import { $, $$, params, bar, villagePreview, UNITS, arrowNext, calIcon } from './ui.js?v=17';
+import { sb, img, esc, num, icon } from './lib.js?v=18';
+import { $, $$, params, bar, villagePreview, UNITS, arrowNext, calIcon } from './ui.js?v=18';
 
 const p = params();
 const st = { v: p.v || '', o: p.o || '', r: p.r ?? '', step: Number(p.step) || 1 };

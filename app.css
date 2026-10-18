@@ -419,3 +419,30 @@ button:active, a:active { transform: scale(.97); }
 .share-btn .icon { width: 16px; height: 16px; }
 .share-btn:hover { border-color: var(--gold); color: var(--gold-dark); }
 .share-link { padding: 10px 12px; border-radius: 10px; background: var(--chip, #F1EEE7); font-size: 12.5px; color: var(--muted); word-break: break-all; text-align: left; }
+
+/* ===== مقاسات وألوان بيتحكم فيها الأدمن (القيم دي هي الافتراضي) ===== */
+:root { --fs: 1; --btn: #B8955A; --hero-text: #1F2A2E; --bar-bg: #1A1A1A; --hero-h: 388px; --hero-h-d: 540px; --hero-ov: .93;
+  --h1: 32px; --h1-d: 52px; --vc-h: 150px; --vc-h-d: 220px; --vc-cols: 2; --vc-cols-d: 4; --gal-h: 260px; --gal-h-d: 420px; --card-r: 12px; --wrap-w: 1080px; }
+body { font-size: calc(15px * var(--fs)); }
+.wrap { max-width: var(--wrap-w); }
+.bar:not(.bar-float) { background: var(--bar-bg); }
+.bar-float.scrolled { background: color-mix(in srgb, var(--bg) 90%, transparent); }
+.hero-lite h1 { font-size: calc(var(--h1) * var(--fs)); color: var(--hero-text); }
+.hero-lite::after { background: linear-gradient(180deg, color-mix(in srgb, var(--bg) calc(var(--hero-ov) * 100%), transparent) 0%, color-mix(in srgb, var(--bg) calc(var(--hero-ov) * 78%), transparent) 38%, transparent 70%); }
+.bar-float + main .hero-lite .wrap { min-height: var(--hero-h); }
+.sgo { background-color: var(--btn); }
+.sgo:hover { background-color: color-mix(in srgb, var(--btn) 88%, #000); }
+.vgrid { grid-template-columns: repeat(var(--vc-cols), minmax(0, 1fr)); }
+.vcard, .vgrid .skel { height: var(--vc-h); border-radius: var(--card-r); }
+.rcard, .rows, .rent-info, .spec { border-radius: var(--r); }
+.gal { height: var(--gal-h); }
+.vhead .h2 { font-size: calc(26px * var(--fs)); }
+.c-head h1 { font-size: calc(25px * var(--fs)); }
+@media (min-width: 900px) {
+  .hero-lite h1 { font-size: calc(var(--h1-d) * var(--fs)); }
+  .bar-float + main .hero-lite .wrap { min-height: var(--hero-h-d); }
+  .vgrid { grid-template-columns: repeat(var(--vc-cols-d), minmax(0, 1fr)); }
+  .vcard, .vgrid .skel { height: var(--vc-h-d); }
+  .gal { height: var(--gal-h-d); }
+  .c-head h1 { font-size: calc(30px * var(--fs)); }
+}

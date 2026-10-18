@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon, waLink, waMessage } from './lib.js?v=17';
-import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, SEASON_NOTE, DEPOSIT_NOTE, CHECKIN, CHECKOUT, shareIcon, shareChalet } from './ui.js?v=17';
+import { sb, img, esc, num, money, icon, waLink, waMessage, T, SHOW } from './lib.js?v=18';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, shareIcon, shareChalet } from './ui.js?v=18';
 
 const p = params();
 const page = $('#page');
@@ -42,7 +42,7 @@ if (!c) {
         ${pics.length > 1 ? `<div class="thumbs" style="padding-inline:0">${pics.map((q, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === 0}"><img src="${esc(img(q))}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}
         <div class="c-head am-up">
           <div style="display:flex;gap:6px;align-items:center">${statusBadge(c.status)}<span class="tag code" style="padding:2px 9px">${esc(c.code)}</span>
-            <button class="share-btn" type="button" data-share aria-label="مشاركة الشاليه">${shareIcon()}<span>مشاركة</span></button></div>
+            ${SHOW('share') ? `<button class="share-btn" type="button" data-share aria-label="مشاركة الشاليه">${shareIcon()}<span>مشاركة</span></button>` : ''}</div>
           <h1>${esc(c.title)}</h1>
           <a href="village.html?v=${encodeURIComponent(v.slug || v.id)}" style="display:flex;gap:6px;align-items:center;font-size:14px">${icon('pin')} قرية ${esc(v.name || '')}</a>
         </div>
@@ -50,9 +50,9 @@ if (!c) {
           <span>${stay ? `<b>${fmtRange(stay.from, stay.to)} · ${num(n)} ليالي</b><small>${num(stay.guests)} أفراد · الإجمالي ${money(pr.total)}</small>` : `<b>اختار تواريخ الإقامة</b><small>شوف الأيام المتاحة في التقويم</small>`}</span>
           <button class="btn btn-sm" type="button" data-cal style="background:transparent;border-color:#5A554B;color:var(--gold)">${stay ? 'تغيير' : 'التقويم'}</button></div>` : ''}
         <div class="spec-grid am-list">${specs.map(([ic, val, l]) => `<div class="spec">${icon(ic)}<b>${esc(val)}</b><small>${l}</small></div>`).join('')}</div>
-        ${rent ? `<div class="rent-info am-up">
-          <h2 class="h3">قبل ما تحجز</h2>
-          <div class="ri"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>مواعيد الدخول والمغادرة</b><small>${CHECKIN} · ${CHECKOUT}</small></div></div>
+        ${rent && SHOW('rentInfo') ? `<div class="rent-info am-up">
+          <h2 class="h3">${esc(T('rentInfoTitle'))}</h2>
+          <div class="ri"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>مواعيد الدخول والمغادرة</b><small>${esc(T('checkin'))} · ${esc(T('checkout'))}</small></div></div>
           <div class="ri">${icon('security')}<div><b>تأمين مسترد${c.security_deposit ? ` ${money(c.security_deposit)}` : ''}</b><small>بيتدفع عند الاستلام${c.security_deposit ? '' : ' (قيمته بتتأكد مع الحجز)'}، ويرجعلك بالكامل عند تسليم الشاليه لو مفيش أي تلف.</small></div></div>
           <div class="ri">${icon('sofa')}<div><b>هاوس كيبنج${c.housekeeping_fee ? ` ${money(c.housekeeping_fee)}` : ''}</b><small>رسوم نظافة وتجهيز بتتدفع مرة واحدة للحجز${c.housekeeping_fee ? ' ومتضافة على الإجمالي' : ' (قيمتها بتتأكد مع الحجز)'}.</small></div></div>
           <div class="ri">${icon('tag')}<div><b>${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `ليلة الخميس والجمعة ${money(c.weekend_price)}` : 'سعر الخميس والجمعة أعلى'}</b><small>${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `باقي أيام الأسبوع ${money(c.price_night)} لليلة.` : 'ليلة الخميس والجمعة سعرها أعلى من باقي أيام الأسبوع.'}</small></div></div>
@@ -71,7 +71,7 @@ if (!c) {
               ${c.down_payment ? `<div><span>المقدم</span><b>${money(c.down_payment)}</b></div>` : ''}
               ${c.installment_period ? `<div><span>مدة التقسيط</span><b>${esc(c.installment_period)}</b></div>` : ''}`}
           </div>
-          ${rent && n && pr.wkN ? `<p class="price-note-box">${SEASON_NOTE}</p>` : ''}
+          ${rent && n && pr.wkN ? `<p class="price-note-box">${esc(T('seasonNote'))}</p>` : ''}
         </div>
         <div class="dock"><div class="wrap">
           <div class="p">${rent ? `<b>${n ? money(pr.total) : money(c.price_night)}</b><small>${n ? `${num(n)} ليالي${pr.deposit ? ` + تأمين ${money(pr.deposit)}` : ''}` : '/ الليلة'}</small>` : `<b>${money(c.price_total)}</b><small>${c.down_payment ? `مقدم ${money(c.down_payment)}` : 'السعر الإجمالي'}</small>`}</div>
@@ -101,12 +101,12 @@ if (!c) {
       <form class="sheet-pad" id="rq" style="display:flex;flex-direction:column;gap:12px" novalidate>
         <div class="sum"><img src="${esc(img(c.cover_image))}" alt=""><div><b>${esc(c.title)}</b><span>${esc(v.name || '')} · ${esc(c.code)}</span>
           ${stay ? `<span style="color:var(--ink)">${fmtRange(stay.from, stay.to)} · ${num(n)} ليالي · ${num(stay.guests)} أفراد</span><b>${money(pr.total)}${pr.hk ? ' <small style="font-weight:400;color:var(--muted)">شامل هاوس كيبنج</small>' : ''}</b>` : `<b>${money(c.price_total)}</b>`}</div></div>
-        ${stay ? `<div class="price-note-box" style="margin:0">${CHECKIN} · ${CHECKOUT}</div>` : ''}
-        ${pr && (pr.deposit || pr.wkN) ? `<div class="price-note-box" style="margin:0">${pr.deposit ? `<b>تأمين مسترد ${money(pr.deposit)}</b> — ${DEPOSIT_NOTE}` : ''}${pr.deposit && pr.wkN ? '<br>' : ''}${pr.wkN ? SEASON_NOTE : ''}</div>` : ''}
+        ${stay ? `<div class="price-note-box" style="margin:0">${esc(T('checkin'))} · ${esc(T('checkout'))}</div>` : ''}
+        ${pr && (pr.deposit || pr.wkN) ? `<div class="price-note-box" style="margin:0">${pr.deposit ? `<b>تأمين مسترد ${money(pr.deposit)}</b> — ${esc(T('depositNote'))}` : ''}${pr.deposit && pr.wkN ? '<br>' : ''}${pr.wkN ? esc(T('seasonNote')) : ''}</div>` : ''}
         <label class="field">الاسم<input name="name" autocomplete="name" required minlength="2" maxlength="80" placeholder="اسمك بالكامل"></label>
         <label class="field">رقم الموبايل<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required dir="ltr" style="text-align:right" placeholder="01xxxxxxxxx"></label>
         <label class="field">ملاحظات (اختياري)<textarea name="notes" rows="2" maxlength="500" placeholder="${rent ? 'أي طلب خاص؟' : 'أنسب معاد للمعاينة؟'}"></textarea></label>
-        <p class="note-box" style="margin:0;display:block;line-height:1.7">مفيش دفع دلوقتي. هنتواصل معاك نأكد ${rent ? 'الحجز' : 'المعاد'} والتفاصيل.</p>
+        <p class="note-box" style="margin:0;display:block;line-height:1.7">${rent ? esc(T('requestNote')) : 'مفيش دفع دلوقتي. هنتواصل معاك نأكد المعاد والتفاصيل.'}</p>
         <p class="err" id="rq-err" hidden></p>
         <button class="btn btn-dark btn-block" type="submit">${rent ? 'ابعت طلب الحجز' : 'ابعت الطلب'}</button>
         <a class="btn btn-soft btn-block" href="${waLink(s, waMessage(s, c, v) + (stay ? `\nمن ${stay.from} لـ ${stay.to} · ${stay.guests} أفراد` : ''))}" target="_blank" rel="noopener">${icon('whatsapp')} أو كمّل على واتساب</a>

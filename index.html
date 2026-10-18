@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Poppins:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=17">
+<link rel="stylesheet" href="app.css?v=18">
 </head>
 <body>
 <header id="bar" class="bar"></header>
@@ -32,7 +32,7 @@
           <select name="o" aria-label="نوع العملية"><option value="">بيع أو إيجار</option><option value="rent">إيجار</option><option value="sale">بيع</option></select><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </label>
         <button class="sgo am-cta" type="submit">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>بحث
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span id="sgo-t">بحث</span>
         </button>
       </form>
     </div>
@@ -42,13 +42,13 @@
     <div class="vhead">
       <span class="line"></span>
       <h2 class="h2" id="vh">اختر قريتك</h2>
-      <p>اكتشف القرى واستعرض الشاليهات المتاحة.</p>
+      <p id="vsub">اكتشف القرى واستعرض الشاليهات المتاحة.</p>
     </div>
     <div class="vgrid am-list" id="villages"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
-    <button class="more-btn" type="button" id="more" hidden>عرض جميع القرى <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button class="more-btn" type="button" id="more" hidden><span id="more-t">عرض جميع القرى</span> <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
   </section>
 </main>
 <footer id="contact"></footer>
-<script type="module" src="home.js?v=17"></script>
+<script type="module" src="home.js?v=18"></script>
 </body>
 </html>

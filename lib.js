@@ -1,5 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=17';
+import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=18';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -70,10 +70,47 @@ export const icon = (name, cls = 'icon') =>
 
 // ---------- إعدادات الموقع ----------
 let _settings;
+// ---------- شكل الموقع اللي الأدمن بيتحكم فيه ----------
+// كل مفتاح هنا بيتحول لمتغير CSS؛ القيم الافتراضية في app.css
+export const THEME_VARS = {
+  gold: ['--gold', 'c'], goldDark: ['--gold-dark', 'c'], btn: ['--btn', 'c'], ink: ['--ink', 'c'], bg: ['--bg', 'c'],
+  heroText: ['--hero-text', 'c'], barBg: ['--bar-bg', 'c'],
+  fs: ['--fs', ''], heroH: ['--hero-h', 'px'], heroHD: ['--hero-h-d', 'px'], heroOv: ['--hero-ov', ''],
+  h1: ['--h1', 'px'], h1D: ['--h1-d', 'px'], vcH: ['--vc-h', 'px'], vcHD: ['--vc-h-d', 'px'],
+  vcCols: ['--vc-cols', ''], vcColsD: ['--vc-cols-d', ''], galH: ['--gal-h', 'px'], galHD: ['--gal-h-d', 'px'],
+  r: ['--r', 'px'], cardR: ['--card-r', 'px'], wrapW: ['--wrap-w', 'px'],
+};
+export const TEXT_DEFAULTS = {
+  villagesTitle: 'اختر قريتك', villagesSub: 'اكتشف القرى واستعرض الشاليهات المتاحة.', moreVillages: 'عرض جميع القرى',
+  searchBtn: 'بحث', footerTitle: 'تابعنا وكلمنا', rentInfoTitle: 'قبل ما تحجز',
+  checkin: 'الدخول من الساعة ١١ لـ ١٢', checkout: 'المغادرة من الساعة ١ لـ ٢',
+  depositNote: 'تأمين مسترد بالكامل عند تسليم الشاليه لو مفيش أي تلف.',
+  seasonNote: 'سعر ليلة الخميس والجمعة أعلى من باقي الأيام، والسعر اليومي ممكن يختلف في الأعياد والمناسبات.',
+  requestNote: 'مفيش دفع دلوقتي. هنتواصل معاك نأكد الحجز والتفاصيل.',
+};
+export const SHOW_DEFAULTS = { villageCount: true, socials: true, rentInfo: true, share: true, thumbs: true, autoplay: true };
+let _theme = {};
+export function applyTheme(t) {
+  _theme = t && typeof t === 'object' ? t : {};
+  const root = document.documentElement;
+  Object.entries(THEME_VARS).forEach(([k, [v, unit]]) => {
+    const val = _theme[k];
+    if (val === undefined || val === null || val === '') root.style.removeProperty(v);
+    else root.style.setProperty(v, unit === 'c' ? String(val) : `${Number(val)}${unit}`);
+  });
+}
+export const T = (k) => { const v = _theme.texts && _theme.texts[k]; return v != null && String(v).trim() !== '' ? String(v) : TEXT_DEFAULTS[k]; };
+export const SHOW = (k) => { const v = _theme.show && _theme.show[k]; return v === undefined ? SHOW_DEFAULTS[k] : !!v; };
+window.__applyTheme = applyTheme;
+
 export async function getSettings() {
   if (_settings) return _settings;
   const { data } = await sb.from('site_settings').select('*').eq('id', 1).maybeSingle();
   _settings = data || {};
+  let t = _settings.theme;
+  // جوه معاينة لوحة التحكم: نستخدم التعديلات اللي لسه ما اتحفظتش
+  try { if (window.self !== window.top) { const pv = localStorage.getItem('aqar-theme-preview'); if (pv) t = JSON.parse(pv); } } catch { /* */ }
+  applyTheme(t);
   return _settings;
 }
 

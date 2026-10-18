@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, getSettings, waLink } from './lib.js?v=17';
+import { sb, img, esc, num, money, icon, getSettings, waLink, T, SHOW } from './lib.js?v=18';
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -33,10 +33,7 @@ export function stayPrice(c, from, to) {
   const hk = nights ? Number(c.housekeeping_fee) || 0 : 0;
   return { nights, wkN, normN: nights - wkN, base, wk, rent, hk, total: rent + hk, deposit: Number(c.security_deposit) || 0 };
 }
-export const CHECKIN = 'الدخول من الساعة ١١ لـ ١٢';
-export const CHECKOUT = 'المغادرة من الساعة ١ لـ ٢';
-export const DEPOSIT_NOTE = 'تأمين مسترد بالكامل عند تسليم الشاليه لو مفيش أي تلف.';
-export const SEASON_NOTE = 'سعر ليلة الخميس والجمعة أعلى من باقي الأيام، والسعر اليومي ممكن يختلف في الأعياد والمناسبات.';
+
 // صفوف تفاصيل السعر
 export function priceRowsHtml(c, p) {
   const r = [];
@@ -50,7 +47,7 @@ export function priceRowsHtml(c, p) {
     if (p.wk !== p.base) r.push(`<div><span>ليلة الخميس والجمعة</span><b>${money(p.wk)}</b></div>`);
     if (c.housekeeping_fee) r.push(`<div><span>هاوس كيبنج (مرة واحدة للحجز)</span><b>${money(c.housekeeping_fee)}</b></div>`);
   }
-  if (p.deposit) r.push(`<div class="dep"><span>تأمين مسترد<small>${DEPOSIT_NOTE}</small></span><b>${money(p.deposit)}</b></div>`);
+  if (p.deposit) r.push(`<div class="dep"><span>تأمين مسترد<small>${T('depositNote')}</small></span><b>${money(p.deposit)}</b></div>`);
   return r.join('');
 }
 
@@ -96,7 +93,7 @@ export function footer(s) {
   const btns = Object.entries(SOCIAL).filter(([k]) => links[k]).map(([k, [label, path]]) =>
     `<a href="${esc(links[k])}" aria-label="${label}" title="${label}"${k === 'phone' ? '' : ' target="_blank" rel="noopener"'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg></a>`).join('');
   el.innerHTML = `<div class="wrap">
-    ${btns ? `<div class="foot-h"><b>تابعنا وكلمنا</b><span></span></div><div class="socials">${btns}</div>` : ''}
+    ${btns && SHOW('socials') ? `<div class="foot-h"><b>${esc(T('footerTitle'))}</b><span></span></div><div class="socials">${btns}</div>` : ''}
     <div class="foot-b"><span>© ${new Date().getFullYear()} عقار محارب</span><span class="en">AQAR MOHAREB</span></div></div>`;
 }
 
@@ -132,7 +129,7 @@ export function slidesHtml(pics, alt, cls = 'sheet-img', extra = '') {
   </div>`;
 }
 function thumbsHtml(pics) {
-  return pics.length > 1 ? `<div class="thumbs">${pics.map((p, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === 0}"><img src="${esc(img(p))}" alt="" loading="lazy"></button>`).join('')}</div>` : '';
+  return pics.length > 1 && SHOW('thumbs') ? `<div class="thumbs">${pics.map((p, i) => `<button type="button" data-i="${i}" aria-label="صورة ${i + 1}" aria-current="${i === 0}"><img src="${esc(img(p))}" alt="" loading="lazy"></button>`).join('')}</div>` : '';
 }
 export function wireSlider(root, { interval = 3500 } = {}) {
   const box = $('[data-slider]', root);
@@ -185,7 +182,7 @@ export function wireSlider(root, { interval = 3500 } = {}) {
     const d = e.clientX - dragX; dragX = null; track.classList.remove('drag');
     go(Math.abs(d) > 40 ? Math.min(n - 1, Math.max(0, startIdx + (d < 0 ? 1 : -1))) : startIdx);
   });
-  if (n < 2) return;
+  if (n < 2 || !SHOW('autoplay')) return;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   t = setInterval(() => {
     if (!box.isConnected) return clearInterval(t);
@@ -283,7 +280,7 @@ export function chaletPreview(c, { onDates, detailsHref, villageName } = {}) {
   const isRent = c.offer_type === 'rent';
   const s = sheet(`${galleryHtml(pics, c.title)}
     <div class="sheet-pad">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="code">${esc(c.code)}</span><button class="share-btn" type="button" data-share aria-label="مشاركة الشاليه">${shareIcon()}<span>مشاركة</span></button></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="code">${esc(c.code)}</span>${SHOW('share') ? `<button class="share-btn" type="button" data-share aria-label="مشاركة الشاليه">${shareIcon()}<span>مشاركة</span></button>` : ''}</div>
       <h2 style="margin:2px 0 0;font-size:18px;font-weight:600">${esc(c.title)}</h2>
       <div class="sub">${esc(villageName || '')}${c.floor ? ` · ${esc(c.floor)}` : ''}</div>
       <div class="feat-grid" style="margin-top:12px">
@@ -304,7 +301,7 @@ export function chaletPreview(c, { onDates, detailsHref, villageName } = {}) {
   wireGallery(s.el, pics);
   const d = $('[data-dates]', s.el);
   d && d.addEventListener('click', () => { s.close(); onDates(c); });
-  $('[data-share]', s.el).addEventListener('click', () => shareChalet(c, villageName));
+  $('[data-share]', s.el)?.addEventListener('click', () => shareChalet(c, villageName));
   return s;
 }
 
@@ -324,7 +321,7 @@ export async function calendarSheet(c, { from, to, guests = 2, onDone, villageNa
       <button class="x-btn" type="button" data-close aria-label="إغلاق" style="background:var(--chip)">${x()}</button></div>
     <div class="cal-nav"><button type="button" data-prev aria-label="الشهر اللي فات"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button><b data-month></b><button type="button" data-next aria-label="الشهر الجاي"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button></div>
     <p class="cal-hint" data-hint></p>
-    <p class="cal-times">${CHECKIN} · ${CHECKOUT}</p>
+    <p class="cal-times">${T('checkin')} · ${T('checkout')}</p>
     <div class="cal" data-grid></div>
     <div class="legend"><span><i style="background:var(--chip);border:1px solid var(--line)"></i>محجوز</span><span><i style="background:var(--ink);border-radius:50%"></i>اختيارك</span><span><i style="border:1px solid var(--line-2)"></i>متاح</span><span><i class="wk-dot"></i>خميس/جمعة</span></div>
     <div class="cal-msg" data-msg aria-live="polite"></div>
@@ -369,7 +366,7 @@ export async function calendarSheet(c, { from, to, guests = 2, onDone, villageNa
     $('[data-sum]', s.el).textContent = n ? `${fmtRange(st.from, st.to)} · ${num(n)} ليالي${pr.hk ? ' · شامل هاوس كيبنج' : ''}` : (st.from ? `الوصول ${fmtDay(st.from)}` : '');
     const note = $('[data-pnote]', s.el);
     const parts = [];
-    if (pr && pr.wkN) parts.push(SEASON_NOTE);
+    if (pr && pr.wkN) parts.push(T('seasonNote'));
     if (pr && pr.deposit) parts.push(`+ ${money(pr.deposit)} تأمين مسترد عند الاستلام.`);
     note.textContent = parts.join(' '); note.hidden = !parts.length;
     $('[data-go]', s.el).disabled = !n;

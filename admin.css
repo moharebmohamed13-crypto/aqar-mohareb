@@ -119,3 +119,22 @@ dialog .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 2
 .cal-cell.pending small { color: var(--gold-dark); }
 .cal-cell.past { opacity: .45; cursor: default; }
 @media (max-width: 560px) { .cal-cell { min-height: 58px; padding: 5px; } .cal-cell small { display: none; } .req-grid { grid-template-columns: 1fr; } }
+/* شكل الموقع */
+.th-layout { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 20px; align-items: start; }
+.th-form { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.th-field { gap: 8px; }
+.th-field input[type=range] { height: 28px !important; padding: 0; accent-color: var(--gold-dark, #8A6D35); }
+.th-val { margin-inline-start: 6px; font-weight: 700; color: var(--gold-dark, #8A6D35); direction: ltr; display: inline-block; }
+.th-color { display: flex; align-items: center; gap: 10px; }
+.th-color input[type=color] { width: 54px !important; height: 40px !important; padding: 2px; border-radius: 10px; cursor: pointer; }
+.th-color code { direction: ltr; font-size: 13px; color: var(--muted); }
+.th-preview { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.th-prev-bar { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.th-prev-bar select { height: 40px; border-radius: 10px; border: 1px solid #DDD6C8; padding: 0 10px; background: #fff; }
+.th-dev { display: flex; border: 1px solid #DDD6C8; border-radius: 10px; overflow: hidden; }
+.th-dev button { border: 0; background: #fff; padding: 0 14px; height: 38px; cursor: pointer; font-size: 14px; }
+.th-dev button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.th-frame-wrap { height: 780px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: #fff; }
+.th-frame-wrap iframe { width: 390px; height: 780px; border: 0; display: block; margin: 0 auto; }
+.th-frame-wrap.desk iframe { width: 1200px; height: 2340px; margin: 0; transform: scale(.348); transform-origin: top right; }
+@media (max-width: 1200px) { .th-layout { grid-template-columns: 1fr; } .th-preview { position: static; } .th-frame-wrap { max-width: 420px; } }

@@ -1,8 +1,9 @@
-import { sb, img, esc, num } from './lib.js?v=17';
-import { $, bar, footer } from './ui.js?v=17';
+import { sb, img, esc, num, T, SHOW } from './lib.js?v=18';
+import { $, bar, footer } from './ui.js?v=18';
 
 const s = await bar({ float: true });
 footer(s);
+$('#vh').textContent = T('villagesTitle'); $('#vsub').textContent = T('villagesSub'); $('#more-t').textContent = T('moreVillages'); if ($('#sgo-t')) $('#sgo-t').textContent = T('searchBtn');
 if (s.hero_image) $('#hero-bg').src = img(s.hero_image);
 if (s.hero_title) $('#h').textContent = s.hero_title;
 if (s.hero_subtitle) $('#hero-sub').textContent = s.hero_subtitle;
@@ -19,7 +20,7 @@ if (error || !villages) {
   row.innerHTML = villages.map((v, i) => `
     <a class="vcard${i >= 4 ? ' extra' : ''}" href="book.html?v=${v.id}&step=2">
       <img src="${esc(img(v.cover_image))}" alt="" loading="lazy">
-      <span class="vtxt"><b>${esc(v.name)}</b><small>${count((v.chalets || []).length)}</small></span>
+      <span class="vtxt"><b>${esc(v.name)}</b>${SHOW('villageCount') ? `<small>${count((v.chalets || []).length)}</small>` : ''}</span>
       <span class="varrow">${arrow}</span>
     </a>`).join('') || '<div class="empty" style="grid-column:1/-1">لسه مفيش قرى.</div>';
   const more = $('#more');

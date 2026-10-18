@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER } from './lib.js?v=17';
+import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER, TEXT_DEFAULTS, SHOW_DEFAULTS } from './lib.js?v=18';
 
 const app = document.getElementById('app');
 let session = null;
@@ -122,6 +122,7 @@ const NAV = [
   ['villages', '#/villages', 'القرى', 'lagoon'],
   ['chalets', '#/chalets', 'الشاليهات', 'roof'],
   ['settings', '#/settings', 'إعدادات الموقع', 'star'],
+  ['appearance', '#/appearance', 'شكل الموقع والمقاسات', 'image'],
 ];
 let pendingCount = 0;
 async function refreshPending() {
@@ -525,6 +526,117 @@ async function villageForm(id) {
 
 // لو اتلصقت رسالة البوت كلها، ناخد الـ apikey بس
 const cleanKey = (v) => { const t = String(v || '').trim(); if (!t) return null; const m = t.match(/apikey[=:\s]+([A-Za-z0-9]+)/i) || t.match(/(\d{5,})/); return m ? m[1] : t; };
+
+// ============ شكل الموقع والمقاسات ============
+const TH_DEF = { gold: '#C9A96A', goldDark: '#8A6D35', btn: '#B8955A', ink: '#1A1A1A', bg: '#FAF9F6', heroText: '#1F2A2E', barBg: '#1A1A1A',
+  fs: 1, heroH: 388, heroHD: 540, heroOv: 0.93, h1: 32, h1D: 52, vcH: 150, vcHD: 220, vcCols: 2, vcColsD: 4, galH: 260, galHD: 420, r: 14, cardR: 12, wrapW: 1080 };
+const TH_GROUPS = [
+  ['الألوان', [
+    ['gold', 'اللون الدهبي الأساسي', 'color'], ['goldDark', 'الدهبي الغامق (الروابط)', 'color'], ['btn', 'لون زرار البحث', 'color'],
+    ['ink', 'لون النص والأزرار السودا', 'color'], ['bg', 'لون خلفية الموقع', 'color'], ['heroText', 'لون عنوان الواجهة', 'color'], ['barBg', 'لون الشريط العلوي (الصفحات الداخلية)', 'color'],
+  ]],
+  ['الخط والمساحة', [
+    ['fs', 'حجم الخط في الموقع كله', 'range', 0.85, 1.3, 0.05, 'x'], ['wrapW', 'أقصى عرض للمحتوى على الكمبيوتر', 'range', 900, 1400, 20, 'px'],
+    ['r', 'استدارة الكروت والصناديق', 'range', 0, 28, 1, 'px'], ['cardR', 'استدارة كروت القرى', 'range', 0, 28, 1, 'px'],
+  ]],
+  ['الواجهة (أول الصفحة الرئيسية)', [
+    ['heroH', 'ارتفاع الواجهة – موبايل', 'range', 300, 700, 10, 'px'], ['heroHD', 'ارتفاع الواجهة – كمبيوتر', 'range', 400, 900, 10, 'px'],
+    ['h1', 'حجم العنوان – موبايل', 'range', 22, 48, 1, 'px'], ['h1D', 'حجم العنوان – كمبيوتر', 'range', 32, 80, 1, 'px'],
+    ['heroOv', 'قوة التدرج الفاتح فوق الصورة', 'range', 0, 1, 0.05, '%'],
+  ]],
+  ['كروت القرى', [
+    ['vcH', 'ارتفاع الكارت – موبايل', 'range', 110, 320, 5, 'px'], ['vcHD', 'ارتفاع الكارت – كمبيوتر', 'range', 150, 420, 5, 'px'],
+    ['vcCols', 'عدد الأعمدة – موبايل', 'range', 1, 3, 1, ''], ['vcColsD', 'عدد الأعمدة – كمبيوتر', 'range', 2, 6, 1, ''],
+  ]],
+  ['صفحة الشاليه', [
+    ['galH', 'ارتفاع الصور – موبايل', 'range', 180, 520, 10, 'px'], ['galHD', 'ارتفاع الصور – كمبيوتر', 'range', 280, 700, 10, 'px'],
+  ]],
+];
+const TX_LABELS = { villagesTitle: 'عنوان قسم القرى', villagesSub: 'السطر تحت عنوان القرى', moreVillages: 'زرار عرض كل القرى', searchBtn: 'كلمة زرار البحث',
+  footerTitle: 'عنوان الفوتر', rentInfoTitle: 'عنوان صندوق ملاحظات الإيجار', checkin: 'ميعاد الدخول', checkout: 'ميعاد المغادرة',
+  depositNote: 'ملاحظة التأمين المسترد', seasonNote: 'ملاحظة أسعار الخميس والجمعة والمواسم', requestNote: 'الرسالة تحت طلب الحجز' };
+const SH_LABELS = { villageCount: 'عدد الشاليهات على كروت القرى', socials: 'أيقونات السوشيال والتواصل في الفوتر', rentInfo: 'صندوق "قبل ما تحجز" في صفحة الشاليه',
+  share: 'زرار مشاركة الشاليه', thumbs: 'الصور الصغيرة تحت معرض الصور', autoplay: 'حركة الصور التلقائية' };
+
+async function appearanceView() {
+  const main = shell('appearance', '<div class="skeleton"></div>');
+  const { data: s, error } = await sb.from('site_settings').select('theme').eq('id', 1).single();
+  if (error) return fail(error);
+  let th = s.theme && typeof s.theme === 'object' ? JSON.parse(JSON.stringify(s.theme)) : {};
+  th.texts = th.texts || {}; th.show = th.show || {};
+  const cur = (k) => (th[k] ?? TH_DEF[k]);
+  const fmt = (v, u) => (u === 'x' ? `${Math.round(v * 100)}%` : u === '%' ? `${Math.round(v * 100)}%` : `${v}${u}`);
+  const field = ([k, label, type, min, max, step, u]) => type === 'color'
+    ? `<label class="field th-field">${label}<span class="th-color"><input type="color" data-k="${k}" value="${esc(cur(k))}"><code>${esc(cur(k))}</code></span></label>`
+    : `<label class="field th-field">${label} <b class="th-val" data-v="${k}">${fmt(cur(k), u)}</b><input type="range" data-k="${k}" data-u="${u}" min="${min}" max="${max}" step="${step}" value="${cur(k)}"></label>`;
+  main.innerHTML = `
+  <div class="admin-top"><div><h1>شكل الموقع والمقاسات</h1><p>أي تغيير بيظهر في المعاينة على طول، ومش بيتنشر للعملاء غير لما تضغط حفظ.</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-outline" type="button" id="th-reset">رجوع للشكل الافتراضي</button><button class="btn btn-gold" type="button" id="th-save">حفظ ونشر</button></div></div>
+  <div class="th-layout">
+    <div class="th-form">
+      ${TH_GROUPS.map(([g, fs]) => `<section class="box"><h2>${g}</h2><div class="g2">${fs.map(field).join('')}</div></section>`).join('')}
+      <section class="box"><h2>النصوص</h2><p class="hint">اللي تسيبه فاضي بيرجع للنص الافتراضي.</p>
+        <div class="g2">${Object.entries(TX_LABELS).map(([k, l]) => `<label class="field">${l}<input data-t="${k}" value="${esc(th.texts[k] || '')}" placeholder="${esc(TEXT_DEFAULTS[k])}"></label>`).join('')}</div></section>
+      <section class="box"><h2>إظهار وإخفاء</h2>
+        <div class="checks">${Object.entries(SH_LABELS).map(([k, l]) => `<label><input type="checkbox" data-s="${k}" ${(th.show[k] ?? SHOW_DEFAULTS[k]) ? 'checked' : ''}>${l}</label>`).join('')}</div></section>
+    </div>
+    <aside class="th-preview">
+      <div class="th-prev-bar"><select id="th-page"><option value="index.html">الرئيسية</option><option value="book.html">اختيار القرية</option><option value="results.html">النتائج</option><option value="__chalet">صفحة شاليه</option></select>
+        <div class="th-dev"><button type="button" data-w="390" aria-pressed="true">موبايل</button><button type="button" data-w="1200">كمبيوتر</button></div></div>
+      <div class="th-frame-wrap"><iframe id="th-frame" title="معاينة الموقع" src="${ROOT}index.html?preview=1"></iframe></div>
+    </aside>
+  </div>`;
+  const frame = $('#th-frame', main);
+  const push = () => { try { frame.contentWindow.__applyTheme && frame.contentWindow.__applyTheme(th); } catch { /* */ } };
+  frame.addEventListener('load', () => setTimeout(push, 400));
+  main.addEventListener('input', (e) => {
+    const el = e.target;
+    if (el.dataset.k) {
+      const k = el.dataset.k;
+      th[k] = el.type === 'color' ? el.value : Number(el.value);
+      if (el.type === 'color') el.nextElementSibling.textContent = el.value;
+      else $(`[data-v="${k}"]`, main).textContent = fmt(Number(el.value), el.dataset.u);
+      push();
+    }
+    if (el.dataset.t) { const v = el.value.trim(); if (v) th.texts[el.dataset.t] = v; else delete th.texts[el.dataset.t]; }
+    if (el.dataset.s) th.show[el.dataset.s] = el.checked;
+  });
+  main.addEventListener('change', (e) => { if (e.target.dataset.t || e.target.dataset.s) { const p = frame.src; frame.src = 'about:blank'; frame.src = p; } });
+  // نخزن التغييرات مؤقتًا علشان المعاينة تقرأها بعد إعادة التحميل
+  const sync = () => { try { localStorage.setItem('aqar-theme-preview', JSON.stringify(th)); } catch { /* */ } };
+  main.addEventListener('input', sync); sync();
+  $('#th-page', main).addEventListener('change', async (e) => {
+    let u = e.target.value;
+    if (u === '__chalet') { const { data } = await sb.from('chalets').select('id').eq('is_visible', true).limit(1); u = data && data[0] ? `chalet.html?id=${data[0].id}` : 'index.html'; }
+    frame.src = ROOT + u + (u.includes('?') ? '&' : '?') + 'preview=1';
+  });
+  main.querySelectorAll('.th-dev button').forEach((b) => b.addEventListener('click', () => {
+    main.querySelectorAll('.th-dev button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    main.querySelector('.th-frame-wrap').style.setProperty('--fw', `${b.dataset.w}px`);
+    main.querySelector('.th-frame-wrap').classList.toggle('desk', b.dataset.w !== '390');
+  }));
+  $('#th-reset', main).addEventListener('click', () => {
+    if (!window.confirm('ترجّع كل الألوان والمقاسات والنصوص للشكل الافتراضي؟ (مش هيتنشر غير لما تضغط حفظ)')) return;
+    th = { texts: {}, show: {} }; sync(); appearanceViewReset(main, th, push);
+  });
+  $('#th-save', main).addEventListener('click', async (e) => {
+    const b = e.currentTarget; b.disabled = true;
+    const clean = { ...th };
+    Object.keys(TH_DEF).forEach((k) => { if (clean[k] === TH_DEF[k]) delete clean[k]; });
+    const { error: er } = await sb.from('site_settings').update({ theme: clean }).eq('id', 1);
+    b.disabled = false;
+    if (er) return fail(er);
+    toast('اتحفظ واتنشر على الموقع ✓');
+  });
+}
+function appearanceViewReset(main, th, push) {
+  main.querySelectorAll('[data-k]').forEach((el) => { const k = el.dataset.k; el.value = TH_DEF[k]; el.dispatchEvent(new Event('input', { bubbles: true })); });
+  main.querySelectorAll('[data-t]').forEach((el) => { el.value = ''; });
+  main.querySelectorAll('[data-s]').forEach((el) => { el.checked = SHOW_DEFAULTS[el.dataset.s]; });
+  Object.keys(TH_DEF).forEach((k) => delete th[k]); th.texts = {}; th.show = {};
+  push();
+}
+
 // ============ إعدادات الموقع ============
 async function settingsView() {
   const main = shell('settings', '<div class="skeleton"></div>');
@@ -750,6 +862,7 @@ async function route() {
   if ((m = h.match(/^#\/villages\/(new|[0-9a-f-]{36})$/))) return villageForm(m[1] === 'new' ? null : m[1]);
   if (h === '#/villages') return villagesList();
   if (h === '#/settings') return settingsView();
+  if (h === '#/appearance') return appearanceView();
   if (h === '#/requests') return requestsView();
   if (h.startsWith('#/calendar')) return calendarView();
   return chaletsList();
