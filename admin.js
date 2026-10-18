@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER, TEXT_DEFAULTS, SHOW_DEFAULTS } from './lib.js?v=18';
+import { sb, img, esc, num, money, icon, ROOT, STATUS, OFFER, TEXT_DEFAULTS, SHOW_DEFAULTS, RULE_DEFAULTS, UNIT_DEFAULTS, DAY_NAMES } from './lib.js?v=19';
 
 const app = document.getElementById('app');
 let session = null;
@@ -554,7 +554,9 @@ const TH_GROUPS = [
 ];
 const TX_LABELS = { villagesTitle: 'عنوان قسم القرى', villagesSub: 'السطر تحت عنوان القرى', moreVillages: 'زرار عرض كل القرى', searchBtn: 'كلمة زرار البحث',
   footerTitle: 'عنوان الفوتر', rentInfoTitle: 'عنوان صندوق ملاحظات الإيجار', checkin: 'ميعاد الدخول', checkout: 'ميعاد المغادرة',
-  depositNote: 'ملاحظة التأمين المسترد', seasonNote: 'ملاحظة أسعار الخميس والجمعة والمواسم', requestNote: 'الرسالة تحت طلب الحجز' };
+  depositNote: 'ملاحظة التأمين المسترد', seasonNote: 'ملاحظة أسعار الويك إند والمواسم', requestNote: 'الرسالة تحت طلب الحجز',
+  searchVillage: 'خانة البحث: القرية', searchOffer: 'خانة البحث: بيع أو إيجار', navHome: 'القايمة: الرئيسية', navBook: 'القايمة: احجز شاليه', navContact: 'القايمة: تواصل معنا',
+  copyright: 'اسم حقوق النشر في الفوتر', btnRequest: 'زرار طلب الحجز', btnViewing: 'زرار طلب المعاينة', btnDates: 'زرار اختيار التواريخ', hkNote: 'شرح الهاوس كيبنج' };
 const SH_LABELS = { villageCount: 'عدد الشاليهات على كروت القرى', socials: 'أيقونات السوشيال والتواصل في الفوتر', rentInfo: 'صندوق "قبل ما تحجز" في صفحة الشاليه',
   share: 'زرار مشاركة الشاليه', thumbs: 'الصور الصغيرة تحت معرض الصور', autoplay: 'حركة الصور التلقائية' };
 
@@ -563,7 +565,9 @@ async function appearanceView() {
   const { data: s, error } = await sb.from('site_settings').select('theme').eq('id', 1).single();
   if (error) return fail(error);
   let th = s.theme && typeof s.theme === 'object' ? JSON.parse(JSON.stringify(s.theme)) : {};
-  th.texts = th.texts || {}; th.show = th.show || {};
+  th.texts = th.texts || {}; th.show = th.show || {}; th.brand = th.brand || {}; th.seo = th.seo || {};
+  th.rules = { ...RULE_DEFAULTS, ...(th.rules || {}) };
+  let units = (Array.isArray(th.units) && th.units.length ? th.units : UNIT_DEFAULTS).map((u) => ({ rooms: u.rooms, name: u.name, guests: u.guests || '' }));
   const cur = (k) => (th[k] ?? TH_DEF[k]);
   const fmt = (v, u) => (u === 'x' ? `${Math.round(v * 100)}%` : u === '%' ? `${Math.round(v * 100)}%` : `${v}${u}`);
   const field = ([k, label, type, min, max, step, u]) => type === 'color'
@@ -575,6 +579,30 @@ async function appearanceView() {
   <div class="th-layout">
     <div class="th-form">
       ${TH_GROUPS.map(([g, fs]) => `<section class="box"><h2>${g}</h2><div class="g2">${fs.map(field).join('')}</div></section>`).join('')}
+
+      <section class="box"><h2>الهوية</h2>
+        <div class="g2">
+          <div class="field">اللوجو (يفضّل PNG بخلفية شفافة)<div class="th-img" data-img="brand.logo"></div></div>
+          <div class="field">أيقونة تاب المتصفح (مربعة)<div class="th-img" data-img="brand.favicon"></div></div>
+          <label class="field">اسم الموقع<input data-g="brand.name" value="${esc(th.brand.name || '')}" placeholder="عقار محارب"></label>
+          <label class="field">الاسم بالإنجليزي<input data-g="brand.latin" value="${esc(th.brand.latin || '')}" placeholder="AQAR MOHAREB" dir="ltr"></label>
+        </div></section>
+      <section class="box"><h2>جوجل والمشاركة</h2><p class="hint">ده اللي بيظهر في نتايج جوجل ولما حد يشارك لينك الموقع.</p>
+        <div class="g2">
+          <label class="field">عنوان الموقع في جوجل<input data-g="seo.title" maxlength="70" value="${esc(th.seo.title || '')}" placeholder="عقار محارب | شاليهات للبيع والإيجار"></label>
+          <div class="field">صورة المشاركة (1200×630 أفضل)<div class="th-img" data-img="seo.image"></div></div>
+          <label class="field" style="grid-column:1/-1">وصف الموقع في جوجل<textarea data-g="seo.description" rows="2" maxlength="170" placeholder="اختار قريتك وشاليهك، وشوف الأيام المتاحة واحجز بسهولة.">${esc(th.seo.description || '')}</textarea></label>
+        </div></section>
+      <section class="box"><h2>قواعد الحجز</h2>
+        <div class="field">أيام الويك إند (الليلة دي بتتحسب بسعر الويك إند)
+          <div class="checks">${[6, 0, 1, 2, 3, 4, 5].map((d) => `<label><input type="checkbox" data-wk="${d}" ${th.rules.weekend.includes(d) ? 'checked' : ''}>ليلة ${DAY_NAMES[d]}</label>`).join('')}</div></div>
+        <div class="g3">
+          <label class="field">أقل عدد ليالي<input type="number" min="1" max="30" data-r="minNights" value="${th.rules.minNights}"></label>
+          <label class="field">أقصى عدد ليالي<input type="number" min="1" max="365" data-r="maxNights" value="${th.rules.maxNights}"></label>
+          <label class="field">الحجز متاح لحد كام يوم قدام<input type="number" min="30" max="730" data-r="windowDays" value="${th.rules.windowDays}"></label>
+        </div></section>
+      <section class="box"><h2>أنواع الوحدات</h2><p class="hint">بتظهر للعميل في خطوة اختيار نوع الوحدة. آخر نوع (أكبر عدد غرف) بيجيب كمان الشاليهات اللي غرفها أكتر منه.</p>
+        <div id="units"></div><div><button class="btn btn-outline" type="button" id="unit-add">+ إضافة نوع</button></div></section>
       <section class="box"><h2>النصوص</h2><p class="hint">اللي تسيبه فاضي بيرجع للنص الافتراضي.</p>
         <div class="g2">${Object.entries(TX_LABELS).map(([k, l]) => `<label class="field">${l}<input data-t="${k}" value="${esc(th.texts[k] || '')}" placeholder="${esc(TEXT_DEFAULTS[k])}"></label>`).join('')}</div></section>
       <section class="box"><h2>إظهار وإخفاء</h2>
@@ -589,6 +617,39 @@ async function appearanceView() {
   const frame = $('#th-frame', main);
   const push = () => { try { frame.contentWindow.__applyTheme && frame.contentWindow.__applyTheme(th); } catch { /* */ } };
   frame.addEventListener('load', () => setTimeout(push, 400));
+  const getP = (path) => path.split('.').reduce((o, k) => (o || {})[k], th);
+  const setP = (path, v) => { const [a, b] = path.split('.'); th[a] = th[a] || {}; if (v === '' || v == null) delete th[a][b]; else th[a][b] = v; };
+  const drawImg = (el) => {
+    const path = el.dataset.img; const u = getP(path);
+    el.innerHTML = `${u ? `<img src="${esc(img(u))}" alt="">` : '<span class="muted">مفيش صورة — بيستخدم الافتراضي</span>'}
+      <span class="th-img-btns"><label class="btn btn-outline btn-sm">رفع صورة<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></label>${u ? '<button class="btn btn-outline btn-sm" type="button" data-rm>شيل</button>' : ''}</span>`;
+    $('input', el).onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      el.querySelector('label').firstChild.textContent = 'بيرفع...';
+      try { setP(path, await upload(f, 'site')); sync(); push(); } catch (er) { fail(er, 'الصورة ماترفعتش'); }
+      drawImg(el);
+    };
+    const rm = $('[data-rm]', el); if (rm) rm.onclick = () => { setP(path, ''); sync(); push(); drawImg(el); };
+  };
+  main.querySelectorAll('[data-img]').forEach(drawImg);
+  const unitsEl = $('#units', main);
+  const drawUnits = () => {
+    unitsEl.innerHTML = `<div class="units-head"><span>عدد الغرف</span><span>الاسم اللي بيظهر</span><span>عدد الأفراد (وصف)</span><span></span></div>` + units.map((u, i) => `
+      <div class="unit-row" data-i="${i}"><input type="number" min="0" max="20" data-u="rooms" value="${u.rooms}" title="٠ = استوديو">
+        <input data-u="name" value="${esc(u.name)}" placeholder="مثال: غرفتين"><input data-u="guests" value="${esc(u.guests)}" placeholder="من ٤ لـ ٦ أفراد">
+        <button class="btn btn-outline btn-sm" type="button" data-unit-del aria-label="حذف">✕</button></div>`).join('');
+  };
+  const syncUnits = () => { th.units = units.filter((u) => String(u.name).trim()).map((u) => ({ rooms: Number(u.rooms) || 0, name: u.name.trim(), guests: (u.guests || '').trim() })).sort((a, b) => a.rooms - b.rooms); sync(); };
+  drawUnits();
+  unitsEl.addEventListener('input', (e) => { const row = e.target.closest('[data-i]'); if (!row || !e.target.dataset.u) return; units[Number(row.dataset.i)][e.target.dataset.u] = e.target.value; syncUnits(); });
+  unitsEl.addEventListener('click', (e) => { const b = e.target.closest('[data-unit-del]'); if (!b) return; units.splice(Number(b.closest('[data-i]').dataset.i), 1); drawUnits(); syncUnits(); });
+  $('#unit-add', main).addEventListener('click', () => { const mx = units.reduce((m, u) => Math.max(m, Number(u.rooms) || 0), -1); units.push({ rooms: mx + 1, name: '', guests: '' }); drawUnits(); });
+  main.addEventListener('input', (e) => {
+    const el = e.target;
+    if (el.dataset.g) { setP(el.dataset.g, el.value.trim()); sync(); }
+    if (el.dataset.r) { th.rules[el.dataset.r] = Math.max(1, Number(el.value) || 1); sync(); }
+    if (el.dataset.wk !== undefined) { th.rules.weekend = [...main.querySelectorAll('[data-wk]')].filter((x) => x.checked).map((x) => Number(x.dataset.wk)); sync(); }
+  });
   main.addEventListener('input', (e) => {
     const el = e.target;
     if (el.dataset.k) {
@@ -633,7 +694,11 @@ function appearanceViewReset(main, th, push) {
   main.querySelectorAll('[data-k]').forEach((el) => { const k = el.dataset.k; el.value = TH_DEF[k]; el.dispatchEvent(new Event('input', { bubbles: true })); });
   main.querySelectorAll('[data-t]').forEach((el) => { el.value = ''; });
   main.querySelectorAll('[data-s]').forEach((el) => { el.checked = SHOW_DEFAULTS[el.dataset.s]; });
-  Object.keys(TH_DEF).forEach((k) => delete th[k]); th.texts = {}; th.show = {};
+  Object.keys(TH_DEF).forEach((k) => delete th[k]); th.texts = {}; th.show = {}; th.brand = {}; th.seo = {}; th.rules = { ...RULE_DEFAULTS }; delete th.units;
+  main.querySelectorAll('[data-g]').forEach((el) => { el.value = ''; });
+  main.querySelectorAll('[data-wk]').forEach((el) => { el.checked = RULE_DEFAULTS.weekend.includes(Number(el.dataset.wk)); });
+  main.querySelectorAll('[data-r]').forEach((el) => { el.value = RULE_DEFAULTS[el.dataset.r]; });
+  main.querySelectorAll('[data-img]').forEach((el) => { el.innerHTML = '<span class="muted">اتشالت — اعمل تحديث للصفحة بعد الحفظ</span>'; });
   push();
 }
 

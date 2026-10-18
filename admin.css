@@ -138,3 +138,13 @@ dialog .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 2
 .th-frame-wrap iframe { width: 390px; height: 780px; border: 0; display: block; margin: 0 auto; }
 .th-frame-wrap.desk iframe { width: 1200px; height: 2340px; margin: 0; transform: scale(.348); transform-origin: top right; }
 @media (max-width: 1200px) { .th-layout { grid-template-columns: 1fr; } .th-preview { position: static; } .th-frame-wrap { max-width: 420px; } }
+.th-img { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px; border: 1px dashed #DDD6C8; border-radius: 12px; background: #FBFAF7; flex-wrap: wrap; }
+.th-img img { width: 56px; height: 56px; object-fit: contain; border-radius: 8px; background: #fff; border: 1px solid var(--line); }
+.th-img .muted { font-size: 13px; }
+.th-img-btns { display: flex; gap: 8px; margin-inline-start: auto; }
+.th-img-btns label { cursor: pointer; }
+.units-head, .unit-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) minmax(0, 1fr) 44px; gap: 10px; align-items: center; }
+.units-head { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+.unit-row { margin-bottom: 8px; }
+.unit-row input { height: 44px; border: 1px solid #DDD6C8; border-radius: 10px; padding: 0 12px; background: #FBFAF7; min-width: 0; }
+@media (max-width: 640px) { .units-head { display: none; } .unit-row { grid-template-columns: 70px 1fr 44px; } .unit-row input[data-u=guests] { grid-column: 1 / 3; } }

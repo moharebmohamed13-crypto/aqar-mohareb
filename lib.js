@@ -1,5 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=18';
+import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=19';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -87,7 +87,20 @@ export const TEXT_DEFAULTS = {
   depositNote: 'تأمين مسترد بالكامل عند تسليم الشاليه لو مفيش أي تلف.',
   seasonNote: 'سعر ليلة الخميس والجمعة أعلى من باقي الأيام، والسعر اليومي ممكن يختلف في الأعياد والمناسبات.',
   requestNote: 'مفيش دفع دلوقتي. هنتواصل معاك نأكد الحجز والتفاصيل.',
+  searchVillage: 'اختر القرية', searchOffer: 'بيع أو إيجار',
+  navHome: 'الرئيسية', navBook: 'احجز شاليه', navContact: 'تواصل معنا',
+  copyright: 'عقار محارب', btnRequest: 'اطلب الحجز', btnViewing: 'اطلب معاينة', btnDates: 'اختار التواريخ',
+  hkNote: 'رسوم نظافة وتجهيز بتتدفع مرة واحدة للحجز',
 };
+export const RULE_DEFAULTS = { weekend: [4, 5], minNights: 1, maxNights: 60, windowDays: 365 };
+export const UNIT_DEFAULTS = [
+  { rooms: 0, n: 'S', name: 'استوديو', guests: 'من ١ لـ ٢ أفراد' },
+  { rooms: 1, n: '١', name: 'غرفة', guests: 'من ٢ لـ ٤ أفراد' },
+  { rooms: 2, n: '٢', name: 'غرفتين', guests: 'من ٤ لـ ٦ أفراد' },
+  { rooms: 3, n: '٣', name: '٣ غرف', guests: 'من ٦ لـ ٨ أفراد' },
+  { rooms: 4, n: '٤', name: '٤ غرف أو أكتر', guests: 'من ٨ لـ ١٠ أفراد' },
+];
+export const DAY_NAMES = ['الأحد', 'الإتنين', 'التلات', 'الأربع', 'الخميس', 'الجمعة', 'السبت'];
 export const SHOW_DEFAULTS = { villageCount: true, socials: true, rentInfo: true, share: true, thumbs: true, autoplay: true };
 let _theme = {};
 export function applyTheme(t) {
@@ -98,8 +111,29 @@ export function applyTheme(t) {
     if (val === undefined || val === null || val === '') root.style.removeProperty(v);
     else root.style.setProperty(v, unit === 'c' ? String(val) : `${Number(val)}${unit}`);
   });
+  try { applyBrandSeo(); } catch { /* */ }
 }
 export const T = (k) => { const v = _theme.texts && _theme.texts[k]; return v != null && String(v).trim() !== '' ? String(v) : TEXT_DEFAULTS[k]; };
+export const RULES = () => ({ ...RULE_DEFAULTS, ...(_theme.rules || {}) });
+export const UNITS_CFG = () => (Array.isArray(_theme.units) && _theme.units.length ? _theme.units.map((u) => ({ ...u, rooms: Number(u.rooms), n: Number(u.rooms) === 0 ? 'S' : num(Number(u.rooms)) })) : UNIT_DEFAULTS);
+export const BRAND = () => ({ logo: '', favicon: '', name: 'عقار محارب', latin: 'AQAR MOHAREB', ...(_theme.brand || {}) });
+export const SEO = () => ({ title: '', description: '', image: '', ...(_theme.seo || {}) });
+export const weekendLabel = (sep = ' و') => { const d = RULES().weekend || []; return d.length ? d.map((i) => DAY_NAMES[i]).join(sep) : 'الويك إند'; };
+function setMeta(attr, key, val) {
+  if (!val) return;
+  let m = document.head.querySelector(`meta[${attr}="${key}"]`);
+  if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); document.head.appendChild(m); }
+  m.setAttribute('content', val);
+}
+function applyBrandSeo() {
+  const b = BRAND(); const seo = SEO();
+  if (b.favicon) { let l = document.head.querySelector('link[rel="icon"]'); if (!l) { l = document.createElement('link'); l.rel = 'icon'; document.head.appendChild(l); } l.href = img(b.favicon); }
+  const home = /(^|\/)(index\.html)?$/.test(location.pathname);
+  if (home && seo.title) document.title = seo.title;
+  if (seo.description) { setMeta('name', 'description', seo.description); setMeta('property', 'og:description', seo.description); }
+  if (seo.title) setMeta('property', 'og:title', seo.title);
+  if (seo.image) setMeta('property', 'og:image', img(seo.image));
+}
 export const SHOW = (k) => { const v = _theme.show && _theme.show[k]; return v === undefined ? SHOW_DEFAULTS[k] : !!v; };
 window.__applyTheme = applyTheme;
 

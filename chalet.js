@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon, waLink, waMessage, T, SHOW } from './lib.js?v=18';
-import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, shareIcon, shareChalet } from './ui.js?v=18';
+import { sb, img, esc, num, money, icon, waLink, waMessage, T, SHOW, weekendLabel } from './lib.js?v=19';
+import { $, $$, params, bar, footer, sheet, calendarSheet, fmtRange, nightsBetween, statusBadge, calIcon, x, slidesHtml, wireSlider, stayPrice, priceRowsHtml, shareIcon, shareChalet } from './ui.js?v=19';
 
 const p = params();
 const page = $('#page');
@@ -54,8 +54,8 @@ if (!c) {
           <h2 class="h3">${esc(T('rentInfoTitle'))}</h2>
           <div class="ri"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>مواعيد الدخول والمغادرة</b><small>${esc(T('checkin'))} · ${esc(T('checkout'))}</small></div></div>
           <div class="ri">${icon('security')}<div><b>تأمين مسترد${c.security_deposit ? ` ${money(c.security_deposit)}` : ''}</b><small>بيتدفع عند الاستلام${c.security_deposit ? '' : ' (قيمته بتتأكد مع الحجز)'}، ويرجعلك بالكامل عند تسليم الشاليه لو مفيش أي تلف.</small></div></div>
-          <div class="ri">${icon('sofa')}<div><b>هاوس كيبنج${c.housekeeping_fee ? ` ${money(c.housekeeping_fee)}` : ''}</b><small>رسوم نظافة وتجهيز بتتدفع مرة واحدة للحجز${c.housekeeping_fee ? ' ومتضافة على الإجمالي' : ' (قيمتها بتتأكد مع الحجز)'}.</small></div></div>
-          <div class="ri">${icon('tag')}<div><b>${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `ليلة الخميس والجمعة ${money(c.weekend_price)}` : 'سعر الخميس والجمعة أعلى'}</b><small>${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `باقي أيام الأسبوع ${money(c.price_night)} لليلة.` : 'ليلة الخميس والجمعة سعرها أعلى من باقي أيام الأسبوع.'}</small></div></div>
+          <div class="ri">${icon('sofa')}<div><b>هاوس كيبنج${c.housekeeping_fee ? ` ${money(c.housekeeping_fee)}` : ''}</b><small>${esc(T('hkNote'))}${c.housekeeping_fee ? ' ومتضافة على الإجمالي' : ' (قيمتها بتتأكد مع الحجز)'}.</small></div></div>
+          <div class="ri">${icon('tag')}<div><b>${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `ليلة ${weekendLabel()} ${money(c.weekend_price)}` : `سعر ${weekendLabel()} أعلى`}</b><small>${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? `باقي أيام الأسبوع ${money(c.price_night)} لليلة.` : `ليلة ${weekendLabel()} سعرها أعلى من باقي أيام الأسبوع.`}</small></div></div>
           <div class="ri">${icon('star')}<div><b>الأسعار في المواسم</b><small>السعر اليومي ممكن يختلف في الأعياد والمناسبات.</small></div></div>
         </div>` : ''}
         ${feats.length ? `<div class="block"><h2 class="h3">مميزات الشاليه</h2><div class="feat-grid am-list">${feats.map((f) => `<div class="feat" style="background:#fff;border:1px solid var(--line)">${icon(f.icon)}${esc(f.name)}</div>`).join('')}</div></div>` : ''}
@@ -75,7 +75,7 @@ if (!c) {
         </div>
         <div class="dock"><div class="wrap">
           <div class="p">${rent ? `<b>${n ? money(pr.total) : money(c.price_night)}</b><small>${n ? `${num(n)} ليالي${pr.deposit ? ` + تأمين ${money(pr.deposit)}` : ''}` : '/ الليلة'}</small>` : `<b>${money(c.price_total)}</b><small>${c.down_payment ? `مقدم ${money(c.down_payment)}` : 'السعر الإجمالي'}</small>`}</div>
-          ${can ? `<button class="btn btn-dark am-cta" type="button" data-req>${rent ? 'اطلب الحجز' : 'اطلب معاينة'}</button>` : `<span class="badge b-off" style="padding:8px 12px">${c.status === 'sold' ? 'تم البيع' : 'غير متاح حاليًا'}</span>`}
+          ${can ? `<button class="btn btn-dark am-cta" type="button" data-req>${esc(rent ? T('btnRequest') : T('btnViewing'))}</button>` : `<span class="badge b-off" style="padding:8px 12px">${c.status === 'sold' ? 'تم البيع' : 'غير متاح حاليًا'}</span>`}
           <a class="btn btn-soft" href="${waLink(s, waMessage(s, c, v) + (stay ? `\nمن ${stay.from} لـ ${stay.to} · ${stay.guests} أفراد` : ''))}" target="_blank" rel="noopener" aria-label="تواصل عبر واتساب">${icon('whatsapp')}</a>
         </div></div>
       </div>

@@ -1,9 +1,10 @@
-import { sb, img, esc, num, T, SHOW } from './lib.js?v=18';
-import { $, bar, footer } from './ui.js?v=18';
+import { sb, img, esc, num, T, SHOW } from './lib.js?v=19';
+import { $, bar, footer } from './ui.js?v=19';
 
 const s = await bar({ float: true });
 footer(s);
 $('#vh').textContent = T('villagesTitle'); $('#vsub').textContent = T('villagesSub'); $('#more-t').textContent = T('moreVillages'); if ($('#sgo-t')) $('#sgo-t').textContent = T('searchBtn');
+$('#search select[name="v"] option[value=""]').textContent = T('searchVillage'); $('#search select[name="o"] option[value=""]').textContent = T('searchOffer');
 if (s.hero_image) $('#hero-bg').src = img(s.hero_image);
 if (s.hero_title) $('#h').textContent = s.hero_title;
 if (s.hero_subtitle) $('#hero-sub').textContent = s.hero_subtitle;

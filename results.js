@@ -1,5 +1,5 @@
-import { sb, img, esc, num, money, icon } from './lib.js?v=18';
-import { $, params, bar, footer, chaletPreview, calendarSheet, unitName, statusBadge } from './ui.js?v=18';
+import { sb, img, esc, num, money, icon, T } from './lib.js?v=19';
+import { $, params, bar, footer, chaletPreview, calendarSheet, unitName, statusBadge, UNITS } from './ui.js?v=19';
 
 const p = params();
 const s = await bar({ back: `book.html?v=${p.v || ''}&o=${p.o || ''}&step=3`, title: 'النتائج' });
@@ -9,7 +9,8 @@ $('#edit').href = `book.html?v=${p.v || ''}&o=${p.o || ''}&step=1`;
 let q = sb.from('chalets').select('*, villages(id, name, slug), chalet_features(features(name, icon, sort_order))');
 if (p.v) q = q.eq('village_id', p.v);
 if (p.o) q = q.eq('offer_type', p.o);
-if (p.r !== undefined && p.r !== '') q = Number(p.r) >= 4 ? q.gte('rooms', 4) : q.eq('rooms', Number(p.r));
+const maxR = Math.max(...UNITS.map((u) => Number(u.rooms)));
+if (p.r !== undefined && p.r !== '') q = Number(p.r) >= maxR ? q.gte('rooms', maxR) : q.eq('rooms', Number(p.r));
 const { data, error } = await q;
 const list = $('#list');
 let items = data || [];
@@ -55,7 +56,7 @@ function draw() {
         ${feats.length || c.view ? `<div class="mini-tags">${c.view ? `<span>فيو ${esc(c.view)}</span>` : ''}${feats.map((f) => `<span>${esc(f.name)}</span>`).join('')}</div>` : ''}
         <div class="bottom">
           <div class="price">${rent ? `<b>${money(c.price_night)}</b><small>/ الليلة</small>` : `<b>${money(c.price_total)}</b><small>${c.installment_period ? `تقسيط ${esc(c.installment_period)}` : 'السعر الإجمالي'}</small>`}</div>
-          ${rent && can ? `<button class="btn btn-gold btn-sm" type="button" data-dates="${c.id}">اختار التواريخ</button>` : `<a class="btn btn-soft btn-sm" href="chalet.html?id=${c.id}">التفاصيل</a>`}
+          ${rent && can ? `<button class="btn btn-gold btn-sm" type="button" data-dates="${c.id}">${esc(T('btnDates'))}</button>` : `<a class="btn btn-soft btn-sm" href="chalet.html?id=${c.id}">التفاصيل</a>`}
         </div>
       </div>
     </article>`;

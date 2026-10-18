@@ -1,4 +1,4 @@
-import { sb, img, esc, num, money, icon, getSettings, waLink, T, SHOW } from './lib.js?v=18';
+import { sb, img, esc, num, money, icon, getSettings, waLink, T, SHOW, RULES, UNITS_CFG, UNIT_DEFAULTS, BRAND, weekendLabel } from './lib.js?v=19';
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -14,17 +14,11 @@ const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي�
 export const fmtDay = (s) => { const d = parse(s); return `${num(d.getDate())} ${MONTHS[d.getMonth()]}`; };
 export const fmtRange = (a, b) => `${fmtDay(a)} ← ${fmtDay(b)}`;
 
-export const UNITS = [
-  { rooms: 0, n: 'S', name: 'استوديو', guests: 'من ١ لـ ٢ أفراد' },
-  { rooms: 1, n: '١', name: 'غرفة', guests: 'من ٢ لـ ٤ أفراد' },
-  { rooms: 2, n: '٢', name: 'غرفتين', guests: 'من ٤ لـ ٦ أفراد' },
-  { rooms: 3, n: '٣', name: '٣ غرف', guests: 'من ٦ لـ ٨ أفراد' },
-  { rooms: 4, n: '٤', name: '٤ غرف أو أكتر', guests: 'من ٨ لـ ١٠ أفراد' },
-];
+export let UNITS = UNIT_DEFAULTS;
 export const unitName = (r) => (UNITS.find((u) => u.rooms === Number(r)) || {}).name || '';
 
 // ---------- حساب سعر الإقامة (الخميس والجمعة بسعر الويك إند + هاوس كيبنج) ----------
-export const isWeekendNight = (d) => d.getDay() === 4 || d.getDay() === 5;
+export const isWeekendNight = (d) => (RULES().weekend || []).includes(d.getDay());
 export function stayPrice(c, from, to) {
   const base = Number(c.price_night) || 0;
   const wk = c.weekend_price != null && c.weekend_price !== '' ? Number(c.weekend_price) : base;
@@ -39,12 +33,12 @@ export function priceRowsHtml(c, p) {
   const r = [];
   if (p.nights) {
     if (p.normN) r.push(`<div><span>${money(p.base)} × ${num(p.normN)} ${p.normN === 1 ? 'ليلة' : 'ليالي'}${p.wkN ? ' (أيام عادية)' : ''}</span><b>${money(p.base * p.normN)}</b></div>`);
-    if (p.wkN) r.push(`<div><span>${money(p.wk)} × ${num(p.wkN)} ${p.wkN === 1 ? 'ليلة' : 'ليالي'} (خميس/جمعة)</span><b>${money(p.wk * p.wkN)}</b></div>`);
+    if (p.wkN) r.push(`<div><span>${money(p.wk)} × ${num(p.wkN)} ${p.wkN === 1 ? 'ليلة' : 'ليالي'} (${weekendLabel('/')})</span><b>${money(p.wk * p.wkN)}</b></div>`);
     if (p.hk) r.push(`<div><span>هاوس كيبنج</span><b>${money(p.hk)}</b></div>`);
     r.push(`<div class="tot"><span>الإجمالي</span><b>${money(p.total)}</b></div>`);
   } else {
     r.push(`<div><span>سعر الليلة (أيام الأسبوع)</span><b>${money(p.base)}</b></div>`);
-    if (p.wk !== p.base) r.push(`<div><span>ليلة الخميس والجمعة</span><b>${money(p.wk)}</b></div>`);
+    if (p.wk !== p.base) r.push(`<div><span>ليلة ${weekendLabel()}</span><b>${money(p.wk)}</b></div>`);
     if (c.housekeeping_fee) r.push(`<div><span>هاوس كيبنج (مرة واحدة للحجز)</span><b>${money(c.housekeeping_fee)}</b></div>`);
   }
   if (p.deposit) r.push(`<div class="dep"><span>تأمين مسترد<small>${T('depositNote')}</small></span><b>${money(p.deposit)}</b></div>`);
@@ -54,6 +48,8 @@ export function priceRowsHtml(c, p) {
 // ---------- الهيدر ----------
 export async function bar({ back, close, title, float } = {}) {
   const s = await getSettings();
+  UNITS = UNITS_CFG();
+  const br = BRAND();
   const el = $('#bar');
   el.className = float ? 'bar bar-float' : 'bar';
   if (float) {
@@ -63,8 +59,8 @@ export async function bar({ back, close, title, float } = {}) {
   const left = close ? `<a class="bar-btn" href="${close}" aria-label="إغلاق">${x()}</a>` : (back ? '<span class="bar-sp"></span>' : '');
   el.innerHTML = `<div class="wrap">
     ${back ? `<a class="bar-btn" href="${back}" aria-label="رجوع">${arrowBack()}</a>` : ''}
-    ${title && back ? `<span class="bar-title">${esc(title)}</span>` : `<a class="brand" href="index.html"><img src="${logo}" alt=""><span><b>عقار محارب</b><small>AQAR MOHAREB</small></span></a>`}
-    <nav class="bar-links" aria-label="القائمة"><a href="index.html">الرئيسية</a><a href="book.html">احجز شاليه</a><a href="#contact">تواصل معنا</a></nav>
+    ${title && back ? `<span class="bar-title">${esc(title)}</span>` : `<a class="brand" href="index.html"><img src="${br.logo ? esc(img(br.logo)) : logo}" alt=""><span><b>${esc(br.name)}</b><small>${esc(br.latin)}</small></span></a>`}
+    <nav class="bar-links" aria-label="القائمة"><a href="index.html">${esc(T('navHome'))}</a><a href="book.html">${esc(T('navBook'))}</a><a href="#contact">${esc(T('navContact'))}</a></nav>
     ${left}
   </div>`;
   return s;
@@ -94,7 +90,7 @@ export function footer(s) {
     `<a href="${esc(links[k])}" aria-label="${label}" title="${label}"${k === 'phone' ? '' : ' target="_blank" rel="noopener"'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg></a>`).join('');
   el.innerHTML = `<div class="wrap">
     ${btns && SHOW('socials') ? `<div class="foot-h"><b>${esc(T('footerTitle'))}</b><span></span></div><div class="socials">${btns}</div>` : ''}
-    <div class="foot-b"><span>© ${new Date().getFullYear()} عقار محارب</span><span class="en">AQAR MOHAREB</span></div></div>`;
+    <div class="foot-b"><span>© ${new Date().getFullYear()} ${esc(T('copyright'))}</span><span class="en">${esc(BRAND().latin)}</span></div></div>`;
 }
 
 // ---------- اللوحة السفلية ----------
@@ -308,7 +304,8 @@ export function chaletPreview(c, { onDates, detailsHref, villageName } = {}) {
 // ---------- تقويم الحجز ----------
 export async function calendarSheet(c, { from, to, guests = 2, onDone, villageName = '' } = {}) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const max = addDays(today, 365);
+  const R = RULES();
+  const max = addDays(today, Number(R.windowDays) || 365);
   const { data } = await sb.from('blocked_dates').select('day').eq('chalet_id', c.id).gte('day', iso(today)).lte('day', iso(max));
   const booked = new Set((data || []).map((r) => r.day));
   const maxG = c.max_guests || 10;
@@ -317,13 +314,13 @@ export async function calendarSheet(c, { from, to, guests = 2, onDone, villageNa
   view.setDate(1);
 
   const s = sheet(`<div class="sheet-handle"></div>
-    <div class="sheet-top"><div><h2>اختار تواريخ الإقامة</h2><div class="sub">شاليه ${esc(c.code)}${villageName ? ` · ${esc(villageName)}` : ''} · ${money(c.price_night)} / الليلة${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? ` · الخميس والجمعة ${money(c.weekend_price)}` : ''}</div></div>
+    <div class="sheet-top"><div><h2>اختار تواريخ الإقامة</h2><div class="sub">شاليه ${esc(c.code)}${villageName ? ` · ${esc(villageName)}` : ''} · ${money(c.price_night)} / الليلة${c.weekend_price && Number(c.weekend_price) !== Number(c.price_night) ? ` · ${weekendLabel()} ${money(c.weekend_price)}` : ''}</div></div>
       <button class="x-btn" type="button" data-close aria-label="إغلاق" style="background:var(--chip)">${x()}</button></div>
     <div class="cal-nav"><button type="button" data-prev aria-label="الشهر اللي فات"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button><b data-month></b><button type="button" data-next aria-label="الشهر الجاي"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button></div>
     <p class="cal-hint" data-hint></p>
     <p class="cal-times">${T('checkin')} · ${T('checkout')}</p>
     <div class="cal" data-grid></div>
-    <div class="legend"><span><i style="background:var(--chip);border:1px solid var(--line)"></i>محجوز</span><span><i style="background:var(--ink);border-radius:50%"></i>اختيارك</span><span><i style="border:1px solid var(--line-2)"></i>متاح</span><span><i class="wk-dot"></i>خميس/جمعة</span></div>
+    <div class="legend"><span><i style="background:var(--chip);border:1px solid var(--line)"></i>محجوز</span><span><i style="background:var(--ink);border-radius:50%"></i>اختيارك</span><span><i style="border:1px solid var(--line-2)"></i>متاح</span><span><i class="wk-dot"></i>${weekendLabel('/')}</span></div>
     <div class="cal-msg" data-msg aria-live="polite"></div>
     <p class="price-note-box" data-pnote hidden></p>
     <div class="stepper"><span><b style="font-size:14px">عدد الأفراد</b><br><small class="sub">أقصى عدد ${num(maxG)}</small></span>
@@ -383,6 +380,8 @@ export async function calendarSheet(c, { from, to, guests = 2, onDone, villageNa
     // اختيار فترة: يوم الوصول وبعدين يوم المغادرة، والأيام اللي بينهم بتتحدد لوحدها
     if (!st.from || k <= st.from) { st.from = k; st.to = null; }
     else if (!free(st.from, k)) { msg.textContent = 'فيه أيام محجوزة في الفترة دي — اختار يوم مغادرة أقرب أو فترة تانية'; }
+    else if (nightsBetween(st.from, k) < (Number(R.minNights) || 1)) { msg.textContent = `أقل مدة للحجز ${num(Number(R.minNights))} ليالي — اختار يوم مغادرة أبعد`; }
+    else if (Number(R.maxNights) && nightsBetween(st.from, k) > Number(R.maxNights)) { msg.textContent = `أقصى مدة للحجز ${num(Number(R.maxNights))} ليلة — اختار يوم مغادرة أقرب`; }
     else st.to = k;
     draw();
   });
